@@ -13,8 +13,12 @@
 			}
 
 			@font-face {
-				font-family: "PressStart2P";
-				src: url("./fonts/PressStart2P-vaV7.ttf");
+				font-family: "Press Start 2P";
+				src: url("fonts/PressStart2P.woff2") format("woff2"),
+					url("fonts/PressStart2P.woff") format("woff"),
+					url("fonts/PressStart2P.ttf") format("truetype"),
+					url("fonts/PressStart2P.svg#PressStart2P") format("svg");
+				font-display: block;
 			}
 
 			.noscript-content {
@@ -22,7 +26,7 @@
 				width: fit-content;
 				margin: 3em auto 0;
 				padding-left: 0.55ch;
-				font-family: "PressStart2P", monospace, sans-serif;
+				font-family: "Press Start 2P", monospace, sans-serif;
 				font-size: 8px;
 				line-height: 1;
 				letter-spacing: -0.1325em;
