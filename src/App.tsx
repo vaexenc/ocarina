@@ -1,5 +1,11 @@
+import LoadingScreen from "./components/loading-screen/LoadingScreen";
+
 function App() {
-	return <></>;
+	return (
+		<>
+			<LoadingScreen />
+		</>
+	);
 }
 
 export default App;
