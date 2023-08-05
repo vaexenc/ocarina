@@ -1,0 +1,114 @@
+.bg :global {
+	--offset-x: 0;
+	--offset-y: 0;
+	--offset-max-x: 0%;
+	--offset-max-y: 0%;
+
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	width: 100%;
+	aspect-ratio: 3408 / 2058;
+	transform: translate(-50%, -50%);
+	backface-visibility: hidden;
+	overflow: hidden;
+	pointer-events: none;
+	user-select: none;
+	opacity: 0.9;
+	z-index: -10000;
+
+	@media (max-aspect-ratio: 3408 / 2058) {
+		width: auto;
+		height: 100%;
+	}
+
+	.bg-elem {
+		--scale: 1;
+
+		position: absolute;
+		backface-visibility: hidden;
+
+		transform: scale(var(--scale))
+			translate(
+				calc(var(--offset-x) * var(--offset-max-x) * -1),
+				calc(var(--offset-y) * var(--offset-max-y) * -1)
+			);
+
+		transition: transform 4s cubic-bezier(0.16, 1, 0.3, 1);
+
+		&.bg-sky {
+			--offset-max-x: 0.1%;
+			--offset-max-y: 0.1%;
+			--scale: 1.1;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: auto;
+		}
+
+		&.bg-mountains {
+			--offset-max-x: 0.1%;
+			--offset-max-y: 0.1%;
+			width: 100%;
+			height: auto;
+			left: 0;
+			bottom: 36%;
+		}
+
+		&.bg-death-mountain {
+			--offset-max-x: 0.5%;
+			--offset-max-y: 0.2%;
+			width: 46%;
+			height: auto;
+			bottom: 40%;
+			right: 0;
+		}
+
+		&.bg-river-castle {
+			--offset-max-x: 0.25%;
+			--offset-max-y: 1%;
+			--scale: 1.03;
+			width: 100%;
+			height: auto;
+			left: 0;
+			bottom: 24%;
+		}
+
+		&.bg-lon-lon-ranch {
+			--offset-max-x: 1.5%;
+			--offset-max-y: 2%;
+			--scale: 1.075;
+			width: 43%;
+			height: auto;
+			left: 7%;
+			bottom: 24%;
+		}
+
+		&.bg-bottom-right {
+			--offset-max-x: 1.75%;
+			--offset-max-y: 2%;
+			width: 58%;
+			height: auto;
+			right: -1%;
+			bottom: 17%;
+		}
+
+		&.bg-bottom {
+			--offset-max-x: 2%;
+			--offset-max-y: 3%;
+			--scale: 1.05;
+			width: 100%;
+			height: auto;
+			left: 0;
+			bottom: -1%;
+		}
+	}
+}
+
+.test-button :global {
+	position: fixed;
+	top: 15px;
+	left: 15px;
+	font-size: 20px;
+	padding: 0.5em;
+}
