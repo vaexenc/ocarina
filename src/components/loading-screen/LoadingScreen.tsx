@@ -1,4 +1,4 @@
-import {useRef, useState} from "react";
+import {useRef, useState, useMemo} from "react";
 import style from "./LoadingScreen.module.less";
 import Color from "color";
 import {clamp, map} from "../../util";
@@ -26,11 +26,67 @@ function TestRangeInput({
 	);
 }
 
+function StoneSymbol({
+	className,
+	style,
+	name,
+	iconName
+}: {
+	className: string;
+	style: React.CSSProperties;
+	name: string;
+	iconName: string;
+}) {
+	return (
+		<div className={className} style={style}>
+			<div className="animation-layer-vertical">
+				<div className={`stone-symbol ${name} ${iconName}`}></div>
+			</div>
+		</div>
+	);
+}
+
 export default function LoadingScreen() {
 	const [progress, setProgress] = useState(0);
 	const [visible, setVisible] = useState(true);
 	const [isFadingOut, setIsFadingOut] = useState(false);
 	const triforceRef = useRef<HTMLImageElement>(null);
+
+	const stoneSymbolData = useMemo(
+		() => [
+			{
+				className: "stone-symbol-container " + (progress > 0 ? "" : " hidden"),
+				style: {
+					"--color": Color("#ffffff")
+						.mix(Color("#00c14f"), clamp(map(progress, 0, 33, 0, 1), 0, 1) * 1)
+						.hex()
+				} as React.CSSProperties,
+				name: "kokiri",
+				iconName: "icon-kokiri"
+			},
+			{
+				className: "stone-symbol-container " + (progress >= 33 ? "" : " hidden"),
+				style: {
+					"--color": Color("#ffffff")
+						.mix(Color("#f22700"), clamp(map(progress, 33, 66, 0, 1), 0, 1) * 1)
+						.hex()
+				} as React.CSSProperties,
+				name: "goron",
+				iconName: "icon-goron"
+			},
+			{
+				className: "stone-symbol-container" + (progress >= 66 ? "" : " hidden"),
+				style: {
+					"--color": Color("#ffffff")
+						.mix(Color("#007dcc"), clamp(map(progress, 66, 100, 0, 1), 0, 1) * 1)
+						.hex()
+				} as React.CSSProperties,
+				name: "zora",
+				iconName: "icon-zora"
+			}
+		],
+		[progress]
+	);
 
 	function testInputOnChange(e: React.ChangeEvent) {
 		const target = e.target as HTMLInputElement;
@@ -58,63 +114,14 @@ export default function LoadingScreen() {
 				>
 					<div className="loading-screen-content">
 						<div className={`stone-symbols`}>
-							<div
-								className={
-									"stone-symbol-container " + (progress > 0 ? "" : " hidden")
-								}
-								style={
-									{
-										"--color": Color("#ffffff")
-											.mix(
-												Color("#00c14f"),
-												clamp(map(progress, 0, 33, 0, 1), 0, 1) * 1
-											)
-											.hex()
-									} as React.CSSProperties
-								}
-							>
-								<div className="animation-layer-vertical">
-									<div className="stone-symbol kokiri icon-kokiri"></div>
-								</div>
-							</div>
-							<div
-								className={
-									"stone-symbol-container " + (progress >= 33 ? "" : " hidden")
-								}
-								style={
-									{
-										"--color": Color("#ffffff")
-											.mix(
-												Color("#f22700"),
-												clamp(map(progress, 33, 66, 0, 1), 0, 1) * 1
-											)
-											.hex()
-									} as React.CSSProperties
-								}
-							>
-								<div className="animation-layer-vertical">
-									<div className="stone-symbol goron icon-goron"></div>
-								</div>
-							</div>
-							<div
-								className={
-									"stone-symbol-container" + (progress >= 66 ? "" : " hidden")
-								}
-								style={
-									{
-										"--color": Color("#ffffff")
-											.mix(
-												Color("#007dcc"),
-												clamp(map(progress, 66, 100, 0, 1), 0, 1) * 1
-											)
-											.hex()
-									} as React.CSSProperties
-								}
-							>
-								<div className="animation-layer-vertical">
-									<div className="stone-symbol zora icon-zora"></div>
-								</div>
-							</div>
+							{stoneSymbolData.map((v) => (
+								<StoneSymbol
+									className={v.className}
+									style={v.style}
+									name={v.name}
+									iconName={v.iconName}
+								/>
+							))}
 						</div>
 						<div
 							className={"progress-bar-container" + (progress < 100 ? "" : " hidden")}
