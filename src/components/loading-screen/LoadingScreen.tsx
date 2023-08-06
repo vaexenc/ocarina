@@ -116,6 +116,7 @@ export default function LoadingScreen() {
 						<div className={`stone-symbols`}>
 							{stoneSymbolData.map((v) => (
 								<StoneSymbol
+									key={v.name}
 									className={v.className}
 									style={v.style}
 									name={v.name}
