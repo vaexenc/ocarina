@@ -1,5 +1,5 @@
 import {useState, useEffect, useRef, useCallback} from "react";
-import {clamp} from "../../util";
+import {clamp} from "/src/util";
 import style from "./Background.module.less";
 
 export default function Background() {
