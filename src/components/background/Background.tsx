@@ -43,7 +43,7 @@ export default function Background() {
 			<div
 				className={style.bg}
 				ref={backgroundRoot}
-				style={!isMoving ? ({"--offset-x": 1, "--offset-y": 1} as React.CSSProperties) : {}}
+				style={!isMoving ? ({"--offset-x": 0, "--offset-y": 0} as React.CSSProperties) : {}}
 			>
 				<img className="bg-elem bg-sky" src="images/background/bg-sky.webp" />
 				<img className="bg-elem bg-mountains" src="images/background/bg-mountains.webp" />
