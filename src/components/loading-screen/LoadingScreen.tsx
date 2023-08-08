@@ -113,7 +113,7 @@ export default function LoadingScreen() {
 					}}
 				>
 					<div className="loading-screen-content">
-						<div className={`stone-symbols`}>
+						<div className={"stone-symbols"}>
 							{stoneSymbolData.map((v) => (
 								<StoneSymbol
 									key={v.name}
