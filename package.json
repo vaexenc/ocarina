@@ -20,6 +20,7 @@
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react-swc": "^3.3.2",
+    "clsx": "^2.0.0",
     "color": "^4.2.3",
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
