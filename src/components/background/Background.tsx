@@ -32,14 +32,6 @@ export default function Background() {
 
 	return (
 		<>
-			{/* <button
-				className={style["test-button"]}
-				onClick={() => {
-					setIsMoving((v) => !v);
-				}}
-			>
-				Toggle
-			</button> */}
 			<div
 				className={style.bg}
 				ref={backgroundRoot}
