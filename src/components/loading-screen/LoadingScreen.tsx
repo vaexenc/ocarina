@@ -2,6 +2,7 @@ import {useRef, useState, useMemo} from "react";
 import style from "./LoadingScreen.module.less";
 import Color from "color";
 import {clamp, map} from "/src/util";
+import clsx from "clsx";
 
 function TestRangeInput({
 	progress,
@@ -40,7 +41,7 @@ function StoneSymbol({
 	return (
 		<div className={className} style={style}>
 			<div className="animation-layer-vertical">
-				<div className={`stone-symbol ${name} ${iconName}`}></div>
+				<div className={clsx("stone-symbol", name, iconName)}></div>
 			</div>
 		</div>
 	);
@@ -55,7 +56,7 @@ export default function LoadingScreen() {
 	const stoneSymbolData = useMemo(
 		() => [
 			{
-				className: "stone-symbol-container " + (progress > 0 ? "" : " hidden"),
+				className: clsx("stone-symbol-container", {hidden: progress <= 0}),
 				style: {
 					"--color": Color("#ffffff")
 						.mix(Color("#00c14f"), clamp(map(progress, 0, 33, 0, 1), 0, 1) * 1)
@@ -65,7 +66,7 @@ export default function LoadingScreen() {
 				iconName: "icon-kokiri"
 			},
 			{
-				className: "stone-symbol-container " + (progress >= 33 ? "" : " hidden"),
+				className: clsx("stone-symbol-container", {hidden: progress < 33}),
 				style: {
 					"--color": Color("#ffffff")
 						.mix(Color("#f22700"), clamp(map(progress, 33, 66, 0, 1), 0, 1) * 1)
@@ -75,7 +76,7 @@ export default function LoadingScreen() {
 				iconName: "icon-goron"
 			},
 			{
-				className: "stone-symbol-container" + (progress >= 66 ? "" : " hidden"),
+				className: clsx("stone-symbol-container", {hidden: progress < 66}),
 				style: {
 					"--color": Color("#ffffff")
 						.mix(Color("#007dcc"), clamp(map(progress, 66, 100, 0, 1), 0, 1) * 1)
@@ -98,11 +99,10 @@ export default function LoadingScreen() {
 			<>
 				<TestRangeInput progress={progress} onChange={testInputOnChange} />
 				<div
-					className={
-						style["loading-screen"] +
-						(progress >= 100 ? " " + style["loaded"] : "") +
-						(isFadingOut ? " " + style["fading-out"] : "")
-					}
+					className={clsx(style["loading-screen"], {
+						[style.loaded]: progress >= 100,
+						[style["fading-out"]]: isFadingOut
+					})}
 					onClick={() => {
 						if (progress >= 100) {
 							setIsFadingOut(true);
@@ -125,7 +125,7 @@ export default function LoadingScreen() {
 							))}
 						</div>
 						<div
-							className={"progress-bar-container" + (progress < 100 ? "" : " hidden")}
+							className={clsx("progress-bar-container", {"hidden": progress >= 100})}
 						>
 							<div
 								className="bar"
@@ -137,7 +137,7 @@ export default function LoadingScreen() {
 							></div>
 						</div>
 						<img
-							className={"triforce" + (progress < 100 ? " hidden" : "")}
+							className={clsx("triforce", {"hidden": progress < 100})}
 							src="images/icons/triforce.svg"
 							ref={triforceRef}
 						/>
