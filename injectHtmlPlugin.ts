@@ -16,6 +16,6 @@ export default function injectHtmlPlugin() {
 		name: "inject-html-plugin",
 		transformIndexHtml(html) {
 			return html.replaceAll("$inject:date", currentTimeStamp());
-		}
+		},
 	};
 }

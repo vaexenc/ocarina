@@ -9,7 +9,7 @@ export default defineConfig({
 	plugins: [react(), injectHtmlPlugin(), ViteMinifyPlugin()],
 	resolve: {
 		alias: {
-			"/": resolve(__dirname)
-		}
-	}
+			"/": resolve(__dirname),
+		},
+	},
 });

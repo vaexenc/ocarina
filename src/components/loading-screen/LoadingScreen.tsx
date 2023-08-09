@@ -6,7 +6,7 @@ import clsx from "clsx";
 
 function TestRangeInput({
 	progress,
-	onChange
+	onChange,
 }: {
 	progress: number;
 	onChange: (e: React.ChangeEvent) => void;
@@ -31,7 +31,7 @@ function StoneSymbol({
 	className,
 	style,
 	name,
-	iconName
+	iconName,
 }: {
 	className: string;
 	style: React.CSSProperties;
@@ -60,31 +60,31 @@ export default function LoadingScreen() {
 				style: {
 					"--color": Color("#ffffff")
 						.mix(Color("#00c14f"), clamp(map(progress, 0, 33, 0, 1), 0, 1) * 1)
-						.hex()
+						.hex(),
 				} as React.CSSProperties,
 				name: "kokiri",
-				iconName: "icon-kokiri"
+				iconName: "icon-kokiri",
 			},
 			{
 				className: clsx("stone-symbol-container", {hidden: progress < 33}),
 				style: {
 					"--color": Color("#ffffff")
 						.mix(Color("#f22700"), clamp(map(progress, 33, 66, 0, 1), 0, 1) * 1)
-						.hex()
+						.hex(),
 				} as React.CSSProperties,
 				name: "goron",
-				iconName: "icon-goron"
+				iconName: "icon-goron",
 			},
 			{
 				className: clsx("stone-symbol-container", {hidden: progress < 66}),
 				style: {
 					"--color": Color("#ffffff")
 						.mix(Color("#007dcc"), clamp(map(progress, 66, 100, 0, 1), 0, 1) * 1)
-						.hex()
+						.hex(),
 				} as React.CSSProperties,
 				name: "zora",
-				iconName: "icon-zora"
-			}
+				iconName: "icon-zora",
+			},
 		],
 		[progress]
 	);
@@ -101,7 +101,7 @@ export default function LoadingScreen() {
 				<div
 					className={clsx(style["loading-screen"], {
 						[style.loaded]: progress >= 100,
-						[style["fading-out"]]: isFadingOut
+						[style["fading-out"]]: isFadingOut,
 					})}
 					onClick={() => {
 						if (progress >= 100) {
@@ -131,7 +131,7 @@ export default function LoadingScreen() {
 								className="bar"
 								style={
 									{
-										"--progress": `${progress}%`
+										"--progress": `${progress}%`,
 									} as React.CSSProperties
 								}
 							></div>
