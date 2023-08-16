@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
-import "./main.less";
+import "./styles/main.less";
 import "no-darkreader";
 import "./icomoon/icomoon.css";
 

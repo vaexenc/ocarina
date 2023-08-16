@@ -1,14 +1,20 @@
-import {useState, useEffect, useRef, useCallback} from "react";
-import {clamp} from "/src/util";
+import {useEffect, useRef, useCallback} from "react";
+import {clamp} from "/src/util/util";
 import style from "./Background.module.less";
+import clsx from "clsx";
 
-export default function Background() {
-	const [isMoving /*, setIsMoving*/] = useState(true);
+export default function Background({
+	isParallaxOn,
+	doesParallaxUpdate,
+}: {
+	isParallaxOn: boolean;
+	doesParallaxUpdate: boolean;
+}) {
 	const backgroundRoot = useRef<HTMLDivElement>(null);
 
 	const handleMouseMove = useCallback(
 		(event: MouseEvent) => {
-			if (!isMoving) return;
+			if (!isParallaxOn || !doesParallaxUpdate) return;
 
 			backgroundRoot.current?.style.setProperty(
 				"--offset-x",
@@ -19,7 +25,7 @@ export default function Background() {
 				String(clamp((event.clientY / window.innerHeight) * 2 - 1, -1, 1))
 			);
 		},
-		[isMoving]
+		[isParallaxOn, doesParallaxUpdate]
 	);
 
 	useEffect(() => {
@@ -33,9 +39,11 @@ export default function Background() {
 	return (
 		<>
 			<div
-				className={style.bg}
+				className={clsx(style.bg, {[style["no-parallax"]]: !isParallaxOn})}
 				ref={backgroundRoot}
-				style={!isMoving ? ({"--offset-x": 0, "--offset-y": 0} as React.CSSProperties) : {}}
+				style={
+					!isParallaxOn ? ({"--offset-x": 0, "--offset-y": 0} as React.CSSProperties) : {}
+				}
 			>
 				<img className="bg-elem bg-sky" src="images/background/bg-sky.webp" />
 				<img className="bg-elem bg-mountains" src="images/background/bg-mountains.webp" />

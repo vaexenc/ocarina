@@ -1,7 +1,7 @@
 import {useRef, useState, useMemo} from "react";
 import style from "./LoadingScreen.module.less";
 import Color from "color";
-import {clamp, map} from "/src/util";
+import {clamp, map} from "/src/util/util";
 import clsx from "clsx";
 
 function TestRangeInput({

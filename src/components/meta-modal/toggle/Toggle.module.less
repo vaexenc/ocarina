@@ -1,0 +1,35 @@
+@transition-duration: 0.1s;
+
+.toggle {
+	position: relative;
+	display: block;
+	width: 38px;
+	height: 16px;
+	background-color: #969aa1;
+	border-radius: 99999px;
+	transition: background-color @transition-duration;
+
+	&::before {
+		content: "";
+		position: absolute;
+		background-color: #ebeef3;
+		top: 50%;
+		left: 0;
+		width: 20px;
+		height: 20px;
+		transform: translateY(-50%);
+		border-radius: 99999px;
+		transition: left @transition-duration, background-color @transition-duration,
+			filter @transition-duration;
+	}
+
+	&.checked {
+		background-color: #3280fe;
+
+		&::before {
+			background-color: #eff5ff;
+			left: calc(38px - 20px);
+			filter: drop-shadow(0 0 6px #3280fe);
+		}
+	}
+}

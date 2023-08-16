@@ -1,0 +1,157 @@
+@font-face {
+	font-family: "Chiaro";
+	src: url("/fonts/chiaro/chiaro-custom.woff2") format("woff2"),
+		url("/fonts/chiaro/chiaro-custom.woff") format("woff"),
+		url("/fonts/chiaro/chiaro-custom.ttf") format("truetype"),
+		url("/fonts/chiaro/chiaro-custom.svg#chiarocustom") format("svg");
+	font-weight: normal;
+	font-style: normal;
+	font-display: block;
+}
+
+:root {
+	font-family: "Chiaro", sans-serif;
+	font-size: 16px;
+	line-height: 1;
+	font-weight: 400;
+	color-scheme: light dark;
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	color: white;
+}
+
+body {
+	margin: 0;
+	background-color: black;
+	min-height: 100vh;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+	width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+	background-color: #888;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+	display: block;
+}
+
+button {
+	all: unset;
+	position: relative;
+	display: block;
+	width: fit-content;
+	cursor: pointer;
+	user-select: none;
+	box-sizing: border-box;
+}
+
+input,
+button,
+textarea,
+select {
+	font: inherit;
+}
+
+a {
+	text-decoration: none;
+	color: green;
+
+	&:hover {
+		color: purple;
+	}
+}
+
+input[type="range"] {
+	--value: 100%;
+	-webkit-appearance: none;
+	appearance: none;
+	width: auto;
+	height: 30px;
+	cursor: pointer;
+	background: transparent;
+
+	&::-webkit-slider-runnable-track {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 100%;
+		height: 6px;
+		background: #969aa1;
+		background-image: linear-gradient(#3280fe, #3280fe);
+		background-size: var(--value) 100%;
+		background-repeat: no-repeat;
+		border-radius: 99999px;
+	}
+
+	&::-moz-range-track {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 100%;
+		height: 6px;
+		background: #969aa1;
+		border-radius: 99999px;
+	}
+
+	&::-moz-range-progress {
+		background: #3280fe;
+		height: 6px;
+		border-radius: 99999px;
+	}
+
+	&::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		height: 20px;
+		width: 20px;
+		background: white;
+		border-radius: 9999px;
+		transform: translateY(-7px);
+		transition: background-color 0.1s, filter 0.3s;
+
+		&:hover {
+			background: #3280fe;
+		}
+	}
+
+	&::-moz-range-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		height: 20px;
+		width: 20px;
+		background: white;
+		border-radius: 9999px;
+		transition: background-color 0.1s, filter 0.3s;
+		border: none;
+	}
+
+	&:hover {
+		&::-webkit-slider-thumb {
+			filter: drop-shadow(0 0 6px #3280fe);
+			background: #3280fe;
+		}
+
+		&::-moz-range-thumb {
+			filter: drop-shadow(0 0 6px #3280fe);
+			background: #3280fe;
+		}
+	}
+}

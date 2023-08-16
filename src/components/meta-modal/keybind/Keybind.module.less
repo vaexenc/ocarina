@@ -1,0 +1,35 @@
+.keybind {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border: 2px solid white;
+	color: white;
+	background: transparent;
+	padding: 0.6em 0.82em;
+	border-radius: 0.35em;
+	min-width: 2.15em;
+	box-sizing: border-box;
+	font-weight: 900;
+	transition: background-color 0.3s, color 0.3s;
+
+	&--awaiting-input {
+		animation: glowing 2s infinite linear;
+	}
+
+	@keyframes glowing {
+		0% {
+			background: rgba(255, 255, 255, 1);
+			color: black;
+		}
+
+		50% {
+			background: transparent;
+			color: white;
+		}
+
+		100% {
+			background: rgba(255, 255, 255, 1);
+			color: black;
+		}
+	}
+}
