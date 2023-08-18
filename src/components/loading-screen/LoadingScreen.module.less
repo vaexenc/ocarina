@@ -1,153 +1,200 @@
-.loading-screen :global {
-	position: fixed;
-	inset: 0;
-	background: black;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	color: #fff;
-	user-select: none;
-	overflow: hidden;
-	z-index: 10000;
-	transition: opacity 500ms;
+.loading-screen {
+	&--loaded {
+		cursor: pointer;
+	}
 
-	.loading-screen-content {
-		position: relative;
+	&--fading-out {
+		opacity: 0;
+		pointer-events: none;
+	}
 
-		.stone-symbol-container {
+	:global {
+		position: fixed;
+		inset: 0;
+		background: black;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		color: #fff;
+		user-select: none;
+		overflow: hidden;
+		z-index: 10000;
+		transition: opacity 500ms;
+
+		.loading-screen-content {
 			position: relative;
-			transition: opacity 0.8s, top 0.8s;
-			top: 0;
 
-			&.hidden {
-				opacity: 0;
-				top: 20px;
+			.stone-symbol-container {
+				position: relative;
+				transition: opacity 0.8s, top 0.8s;
+				top: 0;
+
+				&.hidden {
+					opacity: 0;
+					top: 20px;
+
+					.animation-layer-vertical {
+						animation: none;
+					}
+
+					.stone-symbol {
+						animation: none;
+					}
+				}
+			}
+
+			.stone-symbols {
+				position: relative;
+				display: flex;
+				justify-content: center;
+				align-items: center;
 
 				.animation-layer-vertical {
-					animation: none;
+					position: relative;
+					perspective: 260px;
+
+					& :local {
+						animation: stone-symbol-vertical 3s ease-in-out infinite;
+					}
 				}
 
 				.stone-symbol {
-					animation: none;
+					--scaleX: 1;
+					position: relative;
+					top: 0;
+					display: block;
+					font-size: 60px;
+					margin: 0 20px;
+					pointer-events: none;
+					color: var(--color);
+					filter: drop-shadow(0 0 6px var(--color));
+					opacity: 1;
+					transition: color 0.1s;
+
+					& :local {
+						animation: stone-symbol-spin 3s linear infinite;
+					}
+
+					&.goron {
+						--scaleX: 1.133;
+					}
+
+					@keyframes stone-symbol-spin {
+						0% {
+							transform: rotateY(-180deg) scaleX(var(--scaleX));
+						}
+
+						100% {
+							transform: rotateY(180deg) scaleX(var(--scaleX));
+						}
+					}
+
+					@keyframes stone-symbol-vertical {
+						0% {
+							top: 0px;
+						}
+
+						50% {
+							top: 10px;
+						}
+
+						100% {
+							top: 0px;
+						}
+					}
 				}
 			}
-		}
 
-		.stone-symbols {
-			position: relative;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-
-			.animation-layer-vertical {
-				position: relative;
-				perspective: 260px;
-
-				& :local {
-					animation: stone-symbol-vertical 3s ease-in-out infinite;
-				}
-			}
-
-			.stone-symbol {
-				--scaleX: 1;
-				position: relative;
-				top: 0;
-				display: block;
-				font-size: 60px;
-				margin: 0 20px;
+			.triforce {
+				width: 240px;
+				height: auto;
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, calc(-50% - 30px));
 				pointer-events: none;
-				color: var(--color);
-				filter: drop-shadow(0 0 6px var(--color));
+				z-index: -1;
+				transition: opacity 2s 0.25s, filter 2s 0.25s;
+				filter: drop-shadow(0 0 30px rgba(255, 255, 255, 1))
+					drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+
+				&.hidden {
+					opacity: 0;
+					filter: none;
+				}
+			}
+
+			.progress-bar-container {
+				--progress: 0%;
+				position: relative;
+				margin: 30px auto 0;
+				width: 250px;
+				height: 2px;
+				background: gray;
+				z-index: 10;
+				pointer-events: none;
+				transition: opacity 0.5s, transform 0.5s;
+
+				&.hidden {
+					opacity: 0;
+					transform: translateY(7px);
+				}
+
+				.bar {
+					width: var(--progress);
+					height: 100%;
+					background: white;
+					filter: drop-shadow(0 0 4px rgba(255, 255, 255, 1));
+					transition: width 0.3s;
+				}
+			}
+
+			.continue {
+				font-size: 30px;
+				color: white;
+				text-align: center;
+				bottom: 0;
+				position: absolute;
+				width: 100%;
+				transform: translateY(225%);
 				opacity: 1;
-				transition: color 0.1s;
+				transition: opacity 3s 1.5s;
+				letter-spacing: 0.025em;
+				filter: drop-shadow(0 0 0.1em rgba(255, 255, 255, 1))
+					drop-shadow(0 0 0.15em rgba(255, 255, 255, 0.8));
 
-				& :local {
-					animation: stone-symbol-spin 3s linear infinite;
-				}
+				&.hidden {
+					opacity: 0;
 
-				&.goron {
-					--scaleX: 1.133;
-				}
-
-				@keyframes stone-symbol-spin {
-					0% {
-						transform: rotateY(-180deg) scaleX(var(--scaleX));
-					}
-
-					100% {
-						transform: rotateY(180deg) scaleX(var(--scaleX));
+					.continue-inner {
+						animation: none;
 					}
 				}
 
-				@keyframes stone-symbol-vertical {
-					0% {
-						top: 0px;
+				.continue-inner {
+					opacity: 0;
+
+					:local {
+						animation: continue-animation 4s 1.5s linear infinite;
 					}
 
-					50% {
-						top: 10px;
-					}
+					@keyframes continue-animation {
+						0% {
+							opacity: 0.2;
+						}
 
-					100% {
-						top: 0px;
+						50% {
+							opacity: 1;
+						}
+
+						100% {
+							opacity: 0.2;
+						}
 					}
 				}
-			}
-		}
-
-		.triforce {
-			width: 300px;
-			height: auto;
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, calc(-50% - 30px));
-			pointer-events: none;
-			z-index: -1;
-			transition: opacity 2s 0.25s, filter 2s 0.25s;
-			filter: drop-shadow(0 0 30px rgba(255, 255, 255, 1))
-				drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
-
-			&.hidden {
-				opacity: 0;
-				filter: none;
-			}
-		}
-
-		.progress-bar-container {
-			--progress: 0%;
-			position: relative;
-			margin: 30px auto 0;
-			width: 250px;
-			height: 2px;
-			background: gray;
-			z-index: 10;
-			pointer-events: none;
-			transition: opacity 0.5s, transform 0.5s;
-
-			&.hidden {
-				opacity: 0;
-				transform: translateY(7px);
-			}
-
-			.bar {
-				width: var(--progress);
-				height: 100%;
-				background: white;
-				filter: drop-shadow(0 0 4px rgba(255, 255, 255, 1));
-				transition: width 0.3s;
 			}
 		}
 	}
-}
-
-.loaded :global {
-	cursor: pointer;
-}
-
-.fading-out :global {
-	opacity: 0;
-	pointer-events: none;
 }
 
 .test-range-input-container :global {

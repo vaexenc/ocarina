@@ -100,8 +100,8 @@ export default function LoadingScreen() {
 				<TestRangeInput progress={progress} onChange={testInputOnChange} />
 				<div
 					className={clsx(style["loading-screen"], {
-						[style.loaded]: progress >= 100,
-						[style["fading-out"]]: isFadingOut,
+						[style["loading-screen--loaded"]]: progress >= 100,
+						[style["loading-screen--fading-out"]]: isFadingOut,
 					})}
 					onClick={() => {
 						if (progress >= 100) {
@@ -141,6 +141,9 @@ export default function LoadingScreen() {
 							src="images/icons/triforce.svg"
 							ref={triforceRef}
 						/>
+						<div className={clsx("continue", {"hidden": progress < 100})}>
+							<div className={clsx("continue-inner")}>Continue</div>
+						</div>
 					</div>
 				</div>
 			</>
