@@ -55,6 +55,7 @@ function App() {
 				saveUserSettings={(userSettings: UserSettings) => {
 					saveUserSettings(userSettings);
 				}}
+				isMobile={isMobile}
 			/>
 			<LoadingScreen isMobile={isMobile} />
 		</>

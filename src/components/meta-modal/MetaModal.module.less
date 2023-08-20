@@ -37,6 +37,28 @@
 		opacity: 1;
 	}
 
+	&.meta-modal--mobile :global {
+		.modal-inner {
+			.content {
+				.settings {
+					.setting {
+						&.hide-on-mobile {
+							display: none;
+						}
+					}
+				}
+
+				.info {
+					p {
+						.social-icon {
+							font-size: 1.8em;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	:global {
 		.modal-inner {
 			display: flex;
@@ -106,12 +128,6 @@
 							cursor: pointer;
 						}
 
-						&.hide-on-mobile {
-							@media @mobile {
-								display: none;
-							}
-						}
-
 						.setting-label {
 							margin-right: 1.5em;
 
@@ -150,10 +166,6 @@
 						.social-icon {
 							font-size: 1.2em;
 							margin: 0 0.2em;
-
-							@media @mobile {
-								font-size: 1.8em;
-							}
 						}
 					}
 				}

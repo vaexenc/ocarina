@@ -22,6 +22,7 @@ function Modal({
 	changeUserSetting,
 	currentKeybindId,
 	setCurrentKeybindId,
+	isMobile,
 }: {
 	isOpen: boolean;
 	onClose: () => void;
@@ -33,12 +34,19 @@ function Modal({
 	) => UserSetting[];
 	currentKeybindId: string | null;
 	setCurrentKeybindId: React.Dispatch<React.SetStateAction<string | null>>;
+	isMobile: boolean;
 }) {
 	const userSettingsRef = useRef(userSettings);
 	userSettingsRef.current = userSettings;
 
 	return (
-		<div className={clsx(style["meta-modal"], {[style["meta-modal--show"]]: isOpen})}>
+		<div
+			className={clsx(
+				style["meta-modal"],
+				{[style["meta-modal--show"]]: isOpen},
+				{[style["meta-modal--mobile"]]: isMobile}
+			)}
+		>
 			<button
 				className="close-button"
 				onClick={() => {
@@ -204,6 +212,7 @@ export default function MetaModal({
 	userSettings,
 	setUserSettings,
 	saveUserSettings,
+	isMobile,
 }: {
 	isOpen: boolean;
 	onOpen: () => void;
@@ -211,6 +220,7 @@ export default function MetaModal({
 	userSettings: UserSettings;
 	setUserSettings: React.Dispatch<React.SetStateAction<UserSettings>>;
 	saveUserSettings: (userSettings: UserSettings) => void;
+	isMobile: boolean;
 }) {
 	const [currentKeybindId, setCurrentKeybindId] = useState<string | null>(null);
 
@@ -282,6 +292,7 @@ export default function MetaModal({
 				changeUserSetting={changeUserSetting}
 				currentKeybindId={currentKeybindId}
 				setCurrentKeybindId={setCurrentKeybindId}
+				isMobile={isMobile}
 			/>
 		</>
 	);
