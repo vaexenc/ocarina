@@ -1,7 +1,7 @@
 import LoadingScreen from "./components/loading-screen/LoadingScreen";
 import Background from "./components/background/Background";
 import MetaModal from "./components/meta-modal/MetaModal";
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import defaultUserSettings from "./util/user-settings/defaultUserSettings";
 import {UserSettings} from "./types";
 import {
@@ -10,6 +10,7 @@ import {
 	createUpdatedUserSettings,
 	deleteUserSettings,
 } from "./util/user-settings/userSettings";
+import {checkIfMobileDevice} from "./util/util";
 
 if (new URL(window.location.href).searchParams.has("reset")) {
 	deleteUserSettings();
@@ -23,6 +24,19 @@ const userSettingsInitial =
 function App() {
 	const [userSettings, setUserSettings] = useState(userSettingsInitial);
 	const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
+	const [isMobile, setisMobile] = useState(checkIfMobileDevice());
+
+	function onResize() {
+		setisMobile(checkIfMobileDevice);
+	}
+
+	useEffect(() => {
+		window.addEventListener("resize", onResize);
+
+		return () => {
+			window.removeEventListener("resize", onResize);
+		};
+	}, []);
 
 	return (
 		<>
