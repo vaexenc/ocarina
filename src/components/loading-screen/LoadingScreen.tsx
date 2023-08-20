@@ -47,7 +47,7 @@ function StoneSymbol({
 	);
 }
 
-export default function LoadingScreen() {
+export default function LoadingScreen({isMobile}: {isMobile: boolean}) {
 	const [progress, setProgress] = useState(0);
 	const [visible, setVisible] = useState(true);
 	const [isFadingOut, setIsFadingOut] = useState(false);
@@ -142,7 +142,9 @@ export default function LoadingScreen() {
 							ref={triforceRef}
 						/>
 						<div className={clsx("continue", {"hidden": progress < 100})}>
-							<div className={clsx("continue-inner")}>Continue</div>
+							<div className={clsx("continue-inner")}>
+								{isMobile ? "Tap to continue" : "Click to continue"}
+							</div>
 						</div>
 					</div>
 				</div>
