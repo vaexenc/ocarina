@@ -41,9 +41,12 @@ function App() {
 	return (
 		<>
 			<Background
-				isParallaxOn={Boolean(
-					userSettings.find((userSetting) => userSetting.id === "bgMovement")!.value
-				)}
+				isParallaxOn={
+					!isMobile &&
+					Boolean(
+						userSettings.find((userSetting) => userSetting.id === "bgMovement")!.value
+					)
+				}
 				doesParallaxUpdate={true /*!isMetaModalOpen*/}
 			/>
 			<MetaModal

@@ -2,7 +2,13 @@ import {UserSettings} from "/src/types";
 
 const defaultUserSettings: UserSettings = [
 	{id: "volume", name: "Volume", type: "slider", value: 0.5},
-	{id: "bgMovement", name: "Moving Background", type: "toggle", value: true},
+	{
+		id: "bgMovement",
+		name: "Moving Background",
+		type: "toggle",
+		value: true,
+		hideOnMobile: true,
+	},
 	{
 		id: "keybindA",
 		name: "A",
