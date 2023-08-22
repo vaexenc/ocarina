@@ -3,6 +3,7 @@ import style from "./LoadingScreen.module.less";
 import Color from "color";
 import {clamp, map} from "/src/util/util";
 import clsx from "clsx";
+import {UserSettings} from "/src/types";
 
 function TestRangeInput({
 	progress,
@@ -47,7 +48,13 @@ function StoneSymbol({
 	);
 }
 
-export default function LoadingScreen({isMobile}: {isMobile: boolean}) {
+export default function LoadingScreen({
+	userSettings,
+	isMobile,
+}: {
+	userSettings: UserSettings;
+	isMobile: boolean;
+}) {
 	const [progress, setProgress] = useState(0);
 	const [visible, setVisible] = useState(true);
 	const [isFadingOut, setIsFadingOut] = useState(false);
@@ -93,6 +100,17 @@ export default function LoadingScreen({isMobile}: {isMobile: boolean}) {
 		const target = e.target as HTMLInputElement;
 		setProgress(Number(target.value));
 	}
+
+	const areControlsHidden =
+		isMobile ||
+		progress < 100 ||
+		!(
+			userSettings.find((e) => e.id === "keybindA")?.value === "a" &&
+			userSettings.find((e) => e.id === "keybindCUp")?.value === "ArrowUp" &&
+			userSettings.find((e) => e.id === "keybindCDown")?.value === "ArrowDown" &&
+			userSettings.find((e) => e.id === "keybindCLeft")?.value === "ArrowLeft" &&
+			userSettings.find((e) => e.id === "keybindCRight")?.value === "ArrowRight"
+		);
 
 	return (
 		visible && (
@@ -144,6 +162,24 @@ export default function LoadingScreen({isMobile}: {isMobile: boolean}) {
 						<div className={clsx("continue", {"hidden": progress < 100})}>
 							<div className={clsx("continue-inner")}>
 								{isMobile ? "Tap to continue" : "Click to continue"}
+							</div>
+						</div>
+
+						<div
+							className={clsx("controls", {
+								"hidden": areControlsHidden,
+							})}
+						>
+							<div className="a-button-container">
+								<div className="button">A</div>
+							</div>
+							<div className="c-buttons-container">
+								<div className="button">↑</div>
+								<div className="c-buttons-bottom-row">
+									<div className="button">←</div>
+									<div className="button">↓</div>
+									<div className="button">→</div>
+								</div>
 							</div>
 						</div>
 					</div>

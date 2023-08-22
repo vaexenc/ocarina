@@ -60,7 +60,7 @@ function App() {
 				}}
 				isMobile={isMobile}
 			/>
-			<LoadingScreen isMobile={isMobile} />
+			<LoadingScreen userSettings={userSettings} isMobile={isMobile} />
 		</>
 	);
 }
