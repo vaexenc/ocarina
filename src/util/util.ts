@@ -24,7 +24,7 @@ export function checkIfMobileDevice() {
 	return (
 		/Mobile|Android|iOS|iPhone|iPad|Windows Phone/i.test(navigator.userAgent) ||
 		"ontouchstart" in window ||
-		navigator.maxTouchPoints > 0 ||
+		// navigator.maxTouchPoints > 0 || // returns true in desktop chrome?
 		window.innerWidth <= 768
 	);
 }
