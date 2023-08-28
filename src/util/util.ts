@@ -28,3 +28,30 @@ export function checkIfMobileDevice() {
 		window.innerWidth <= 768
 	);
 }
+
+export function fetchSoundWithRetry(
+	url: string,
+	onfulfilled: (arrayBuffer: ArrayBuffer) => void,
+	retryDelay?: number
+) {
+	const delay = retryDelay ? retryDelay * 1.5 : 1000;
+
+	fetch(url)
+		.then((response) => {
+			response
+				.arrayBuffer()
+				.then((arrayBuffer) => {
+					onfulfilled(arrayBuffer);
+				})
+				.catch(() => {
+					setTimeout(() => {
+						fetchSoundWithRetry(url, onfulfilled, delay);
+					}, delay);
+				});
+		})
+		.catch(() => {
+			setTimeout(() => {
+				fetchSoundWithRetry(url, onfulfilled, delay);
+			}, delay);
+		});
+}

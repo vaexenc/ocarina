@@ -1,32 +1,20 @@
-import {useRef, useState, useMemo} from "react";
+import {useRef, useState, useMemo, useEffect} from "react";
 import style from "./LoadingScreen.module.less";
 import Color from "color";
-import {clamp, map} from "/src/util/util";
+import {clamp, fetchSoundWithRetry, map} from "/src/util/util";
 import clsx from "clsx";
-import {UserSettings} from "/src/types";
+import {Sounds, UserSettings} from "/src/types";
+import {songs} from "../../song-data";
 
-function TestRangeInput({
-	progress,
-	onChange,
-}: {
-	progress: number;
-	onChange: (e: React.ChangeEvent) => void;
-}) {
-	return (
-		<div className={style["test-range-input-container"]}>
-			<input
-				type="range"
-				className="test-range-input"
-				min="0"
-				max="100"
-				step="0.01"
-				defaultValue={progress}
-				onChange={onChange}
-			/>
-			<span className="value">{progress}</span>
-		</div>
-	);
-}
+const soundsToFetch = [
+	...Object.entries(songs).map((song) => {
+		return {id: song[0], url: "audio/songs/" + song[0] + ".ogg"};
+	}),
+	{id: "ocarina", url: "audio/ocarina.ogg"},
+	// {id: "start", url: "audio/start.ogg"},
+	{id: "song-correct", url: "audio/song-correct.ogg"},
+	{id: "confirm", url: "audio/confirm.ogg"},
+];
 
 function StoneSymbol({
 	className,
@@ -51,55 +39,92 @@ function StoneSymbol({
 export default function LoadingScreen({
 	userSettings,
 	isMobile,
+	setSounds,
 }: {
 	userSettings: UserSettings;
 	isMobile: boolean;
+	setSounds: React.Dispatch<React.SetStateAction<Sounds>>;
 }) {
 	const [progress, setProgress] = useState(0);
 	const [visible, setVisible] = useState(true);
 	const [isFadingOut, setIsFadingOut] = useState(false);
 	const triforceRef = useRef<HTMLImageElement>(null);
+	const hasMainEffectRun = useRef(false); // to try to deal with StrictMode
+
+	function updateProgress() {
+		setProgress((progress) => {
+			return progress + 100 / progressTotalAmount;
+		});
+	}
+
+	const progressTotalAmount = soundsToFetch.length + 1; // + document load
+	let progressModified = progress;
+
+	if (progressModified > 99.99) {
+		progressModified = 100;
+	}
+
+	useEffect(() => {
+		if (hasMainEffectRun.current) return;
+		hasMainEffectRun.current = true;
+
+		if (document.readyState === "complete") {
+			updateProgress();
+		} else {
+			window.addEventListener("load", function () {
+				updateProgress();
+			});
+		}
+
+		soundsToFetch.forEach((sound) => {
+			fetchSoundWithRetry(sound.url, (arrayBuffer) => {
+				updateProgress();
+				setSounds((sounds) => {
+					return {...sounds, [sound.id]: arrayBuffer};
+				});
+			});
+		});
+		// eslint-disable-next-line
+	}, []);
 
 	const stoneSymbolData = useMemo(
 		() => [
 			{
-				className: clsx("stone-symbol-container", {hidden: progress <= 0}),
+				className: clsx("stone-symbol-container", {hidden: progressModified <= 0}),
 				style: {
 					"--color": Color("#ffffff")
-						.mix(Color("#00c14f"), clamp(map(progress, 0, 33, 0, 1), 0, 1) * 1)
+						.mix(Color("#00c14f"), clamp(map(progressModified, 0, 33, 0, 1), 0, 1) * 1)
 						.hex(),
 				} as React.CSSProperties,
 				name: "kokiri",
 				iconName: "icon-kokiri",
 			},
 			{
-				className: clsx("stone-symbol-container", {hidden: progress < 33}),
+				className: clsx("stone-symbol-container", {hidden: progressModified < 33}),
 				style: {
 					"--color": Color("#ffffff")
-						.mix(Color("#f22700"), clamp(map(progress, 33, 66, 0, 1), 0, 1) * 1)
+						.mix(Color("#f22700"), clamp(map(progressModified, 33, 66, 0, 1), 0, 1) * 1)
 						.hex(),
 				} as React.CSSProperties,
 				name: "goron",
 				iconName: "icon-goron",
 			},
 			{
-				className: clsx("stone-symbol-container", {hidden: progress < 66}),
+				className: clsx("stone-symbol-container", {hidden: progressModified < 66}),
 				style: {
 					"--color": Color("#ffffff")
-						.mix(Color("#007dcc"), clamp(map(progress, 66, 100, 0, 1), 0, 1) * 1)
+						.mix(
+							Color("#007dcc"),
+							clamp(map(progressModified, 66, 100, 0, 1), 0, 1) * 1
+						)
 						.hex(),
 				} as React.CSSProperties,
 				name: "zora",
 				iconName: "icon-zora",
 			},
 		],
-		[progress]
+		[progressModified]
 	);
-
-	function testInputOnChange(e: React.ChangeEvent) {
-		const target = e.target as HTMLInputElement;
-		setProgress(Number(target.value));
-	}
 
 	const areControlsHidden =
 		isMobile ||
@@ -115,14 +140,13 @@ export default function LoadingScreen({
 	return (
 		visible && (
 			<>
-				<TestRangeInput progress={progress} onChange={testInputOnChange} />
 				<div
 					className={clsx(style["loading-screen"], {
-						[style["loading-screen--loaded"]]: progress >= 100,
+						[style["loading-screen--loaded"]]: progressModified >= 100,
 						[style["loading-screen--fading-out"]]: isFadingOut,
 					})}
-					onClick={() => {
-						if (progress >= 100) {
+					onClick={async () => {
+						if (progressModified >= 100) {
 							setIsFadingOut(true);
 							setTimeout(() => {
 								setVisible(false);
@@ -143,23 +167,25 @@ export default function LoadingScreen({
 							))}
 						</div>
 						<div
-							className={clsx("progress-bar-container", {"hidden": progress >= 100})}
+							className={clsx("progress-bar-container", {
+								"hidden": progressModified >= 100,
+							})}
 						>
 							<div
 								className="bar"
 								style={
 									{
-										"--progress": `${progress}%`,
+										"--progress": `${progressModified}%`,
 									} as React.CSSProperties
 								}
 							></div>
 						</div>
 						<img
-							className={clsx("triforce", {"hidden": progress < 100})}
+							className={clsx("triforce", {"hidden": progressModified < 100})}
 							src="images/icons/triforce.svg"
 							ref={triforceRef}
 						/>
-						<div className={clsx("continue", {"hidden": progress < 100})}>
+						<div className={clsx("continue", {"hidden": progressModified < 100})}>
 							<div className={clsx("continue-inner")}>
 								{isMobile ? "Tap to continue" : "Click to continue"}
 							</div>

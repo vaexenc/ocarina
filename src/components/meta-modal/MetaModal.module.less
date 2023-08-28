@@ -7,6 +7,7 @@
 	padding: 15px 15px 10px 10px;
 	transition: transform 0.3s;
 	filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 1px rgba(0, 0, 0, 0.5));
+	z-index: 100;
 
 	&:hover {
 		transform: scale(1.33) rotate(5deg);
@@ -14,8 +15,12 @@
 
 	:global {
 		.image {
-			height: 40px;
+			height: 34px;
 			width: auto;
+
+			@media (min-width: 1000px) {
+				height: 40px;
+			}
 		}
 	}
 }
@@ -30,6 +35,7 @@
 	pointer-events: none;
 	backdrop-filter: blur(2vmax);
 	transition: opacity 0.3s, backdrop-filter 0.3s;
+	z-index: 101;
 
 	&--show {
 		pointer-events: auto;

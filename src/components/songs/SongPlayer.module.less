@@ -1,0 +1,83 @@
+.song-player {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	user-select: none;
+
+	& :global {
+		.note-box-player {
+			// --height: 120px;
+			--height: 98px;
+			width: calc(100% - 30px);
+			max-width: 410px;
+			margin-top: 30px;
+			margin-bottom: 30px;
+			flex-shrink: 0;
+			flex-grow: 0;
+			padding: calc(var(--height) * 0.5) calc(var(--height) * 0.1923)
+				calc(var(--height) * 0.2);
+
+			@media (min-width: 650px) {
+				--height: 120px;
+				max-width: 500px;
+			}
+
+			@media (min-width: 1000px) {
+				--height: 180px;
+				width: 100%;
+				max-width: 700px;
+				margin-top: 75px;
+				margin-bottom: 50px;
+				margin-left: 0;
+				margin-right: 0;
+			}
+
+			@media (min-width: 1400px) {
+			}
+
+			.text-container {
+				top: calc(var(--height) * 0.22);
+				transform: translate(-50%, -50%);
+				font-size: calc(var(--height) * 0.153846);
+				line-height: 1.2;
+				height: calc(2.06em * 1.2);
+
+				.text {
+					display: -webkit-box;
+					-webkit-box-orient: vertical;
+					-webkit-line-clamp: 2;
+					overflow: hidden;
+				}
+			}
+
+			.inner {
+				.notes {
+					.note-container {
+						.note {
+							opacity: 0;
+
+							:local {
+								animation: note-add 0.3s forwards;
+							}
+
+							@keyframes note-add {
+								0% {
+									opacity: 0.2;
+								}
+
+								100% {
+									opacity: 1;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

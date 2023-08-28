@@ -1,0 +1,51 @@
+.mobile-controls {
+	--button-size: 64px;
+	--inward-offset: calc(var(--button-size) * -0.1);
+
+	display: flex;
+	margin-bottom: 60px;
+	isolation: isolate;
+
+	:global {
+		.button {
+			width: var(--button-size);
+			height: auto;
+			border-radius: 99999px;
+			cursor: pointer;
+			pointer-events: auto !important;
+		}
+
+		.a-container {
+			display: flex;
+			justify-content: flex-end;
+			align-items: flex-end;
+			height: 100%;
+			margin-right: calc(var(--button-size) * -0.66);
+			pointer-events: none;
+		}
+
+		.c-container {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			margin-bottom: calc(var(--button-size) * 0.33);
+			pointer-events: none;
+
+			.c-left {
+				margin-right: var(--inward-offset);
+			}
+
+			.c-right {
+				margin-left: calc(var(--button-size) + var(--inward-offset) * 0.25);
+			}
+
+			.c-middle-buttons {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				margin: var(--inward-offset) 0;
+			}
+		}
+	}
+}
