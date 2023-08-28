@@ -155,7 +155,13 @@ function Modal({
 								target="_blank"
 							>
 								The Legend of Zelda: Ocarina of Time
-								<br />
+							</a>{" "}
+							and{" "}
+							<a
+								href="https://en.wikipedia.org/wiki/The_Legend_of_Zelda:_Majora%27s_Mask"
+								target="_blank"
+							>
+								Majora's Mask
 							</a>
 						</p>
 						<p>
