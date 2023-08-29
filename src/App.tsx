@@ -15,6 +15,8 @@ import {checkIfMobileDevice} from "./util/util";
 
 if (new URL(window.location.href).searchParams.has("reset")) {
 	deleteUserSettings();
+	const urlWithoutParameters = window.location.origin + window.location.pathname;
+	window.history.replaceState({}, document.title, urlWithoutParameters);
 }
 
 const localUserSettings = loadLocalUserSettings();
