@@ -42,6 +42,10 @@ function App() {
 	);
 	const audioBuffers = useRef<AudioBuffers>({});
 
+	audioSystem.current.gain.gain.value = userSettings.find(
+		(userSetting) => userSetting.id === "volume"
+	)!.value as number;
+
 	function onResize() {
 		setisMobile(checkIfMobileDevice);
 	}
