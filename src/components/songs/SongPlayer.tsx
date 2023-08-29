@@ -1,11 +1,10 @@
-import SongReference from "./SongReference";
 import clsx from "clsx";
-import style from "./SongPlayer.module.less";
-import NoteBox from "./Notebox";
 import {useEffect, useRef, useState} from "react";
-import {Note, NoteName, Sounds} from "/src/types";
-import {UserSettings} from "/src/types";
 import MobileControls from "./MobileControls";
+import NoteBox from "./Notebox";
+import style from "./SongPlayer.module.less";
+import SongReference from "./SongReference";
+import {Note, NoteName, Sounds, UserSettings} from "/src/types";
 
 const keybindsToNotes: {[key: string]: NoteName} = {
 	"keybindA": "a",

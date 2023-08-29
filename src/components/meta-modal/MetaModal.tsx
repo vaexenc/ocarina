@@ -1,9 +1,9 @@
-import {useEffect, useCallback, useRef, useState} from "react";
+import clsx from "clsx";
+import {useCallback, useEffect, useRef, useState} from "react";
 import style from "./MetaModal.module.less";
-import Toggle from "./toggle/Toggle";
 import Keybind from "./keybind/Keybind";
 import RangeInput from "./range-input/RangeInput";
-import clsx from "clsx";
+import Toggle from "./toggle/Toggle";
 import {UserSetting, UserSettings} from "/src/types";
 
 function ModalTrigger({onClick}: {onClick: React.MouseEventHandler<HTMLButtonElement>}) {

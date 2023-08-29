@@ -1,7 +1,7 @@
 import clsx from "clsx";
-import {Note} from "/src/types";
 import style from "./Notebox.module.less";
 import {noteMap} from "/src/song-data";
+import {Note} from "/src/types";
 
 export default function NoteBox({
 	className,

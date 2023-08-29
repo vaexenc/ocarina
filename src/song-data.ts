@@ -177,4 +177,4 @@ const noteMap = {
 	a: {class: "note-a", image: "/images/buttons/a.svg"},
 };
 
-export {songs, songSlots, noteMap};
+export {noteMap, songSlots, songs};

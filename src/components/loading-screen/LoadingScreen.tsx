@@ -1,10 +1,10 @@
-import {useRef, useState, useMemo, useEffect} from "react";
-import style from "./LoadingScreen.module.less";
-import Color from "color";
-import {clamp, fetchSoundWithRetry, map} from "/src/util/util";
 import clsx from "clsx";
-import {Sounds, UserSettings} from "/src/types";
+import Color from "color";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {songs} from "../../song-data";
+import style from "./LoadingScreen.module.less";
+import {Sounds, UserSettings} from "/src/types";
+import {clamp, fetchSoundWithRetry, map} from "/src/util/util";
 
 const soundsToFetch = [
 	...Object.entries(songs).map((song) => {

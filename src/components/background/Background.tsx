@@ -1,7 +1,7 @@
-import {useEffect, useRef, useCallback} from "react";
-import {clamp} from "/src/util/util";
-import style from "./Background.module.less";
 import clsx from "clsx";
+import {useCallback, useEffect, useRef} from "react";
+import style from "./Background.module.less";
+import {clamp} from "/src/util/util";
 
 export default function Background({
 	isParallaxOn,

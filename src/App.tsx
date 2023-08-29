@@ -1,15 +1,15 @@
-import LoadingScreen from "./components/loading-screen/LoadingScreen";
+import {useEffect, useState} from "react";
 import Background from "./components/background/Background";
+import LoadingScreen from "./components/loading-screen/LoadingScreen";
 import MetaModal from "./components/meta-modal/MetaModal";
-import {useState, useEffect} from "react";
 import SongPlayer from "./components/songs/SongPlayer";
-import defaultUserSettings from "./util/user-settings/defaultUserSettings";
 import {Sounds, UserSettings} from "./types";
+import defaultUserSettings from "./util/user-settings/defaultUserSettings";
 import {
-	saveUserSettings,
-	loadLocalUserSettings,
 	createUpdatedUserSettings,
 	deleteUserSettings,
+	loadLocalUserSettings,
+	saveUserSettings,
 } from "./util/user-settings/userSettings";
 import {checkIfMobileDevice} from "./util/util";
 

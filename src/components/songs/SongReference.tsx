@@ -1,8 +1,8 @@
 import clsx from "clsx";
+import React, {useEffect, useRef} from "react";
 import NoteBox from "./Notebox";
 import style from "./SongReference.module.less";
 import {songs, songSlots} from "/src/song-data";
-import React, {useEffect, useRef} from "react";
 
 function updateSongReferenceElementStyle(element: HTMLElement) {
 	if (element.scrollHeight <= element.clientHeight) {

@@ -1,5 +1,5 @@
-import style from "./Keybind.module.less";
 import clsx from "clsx";
+import style from "./Keybind.module.less";
 
 export default function Keybind({
 	keyboardKey,

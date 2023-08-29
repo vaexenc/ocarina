@@ -1,4 +1,4 @@
-import {UserSettings, SerializedUserSettings} from "/src/types";
+import {SerializedUserSettings, UserSettings} from "/src/types";
 
 export function saveUserSettings(userSettings: UserSettings) {
 	const serializedUserSettings: SerializedUserSettings = {};
