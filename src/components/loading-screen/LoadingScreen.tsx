@@ -3,7 +3,7 @@ import Color from "color";
 import {useEffect, useMemo, useRef, useState} from "react";
 import {songs} from "../../song-data";
 import style from "./LoadingScreen.module.less";
-import {Sounds, UserSettings} from "/src/types";
+import {AudioBuffers, AudioSystem, UserSettings} from "/src/types";
 import {clamp, fetchSoundWithRetry, map} from "/src/util/util";
 
 const soundsToFetch = [
@@ -39,11 +39,13 @@ function StoneSymbol({
 export default function LoadingScreen({
 	userSettings,
 	isMobile,
-	setSounds,
+	audioSystem,
+	audioBuffers,
 }: {
 	userSettings: UserSettings;
 	isMobile: boolean;
-	setSounds: React.Dispatch<React.SetStateAction<Sounds>>;
+	audioSystem: React.MutableRefObject<AudioSystem>;
+	audioBuffers: React.MutableRefObject<AudioBuffers>;
 }) {
 	const [progress, setProgress] = useState(0);
 	const [visible, setVisible] = useState(true);
@@ -78,9 +80,9 @@ export default function LoadingScreen({
 
 		soundsToFetch.forEach((sound) => {
 			fetchSoundWithRetry(sound.url, (arrayBuffer) => {
-				updateProgress();
-				setSounds((sounds) => {
-					return {...sounds, [sound.id]: arrayBuffer};
+				audioSystem.current.context.decodeAudioData(arrayBuffer).then((audioBuffer) => {
+					audioBuffers.current[sound.id] = audioBuffer;
+					updateProgress();
 				});
 			});
 		});
@@ -147,6 +149,11 @@ export default function LoadingScreen({
 					})}
 					onClick={async () => {
 						if (progressModified >= 100) {
+							const source = audioSystem.current.context.createBufferSource();
+							source.buffer = audioBuffers.current["confirm"];
+							source.connect(audioSystem.current.gain);
+							source.start();
+
 							setIsFadingOut(true);
 							setTimeout(() => {
 								setVisible(false);

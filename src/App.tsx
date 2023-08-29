@@ -1,9 +1,9 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import Background from "./components/background/Background";
 import LoadingScreen from "./components/loading-screen/LoadingScreen";
 import MetaModal from "./components/meta-modal/MetaModal";
 import SongPlayer from "./components/songs/SongPlayer";
-import {Sounds, UserSettings} from "./types";
+import {AudioBuffers, AudioSystem, UserSettings} from "./types";
 import defaultUserSettings from "./util/user-settings/defaultUserSettings";
 import {
 	createUpdatedUserSettings,
@@ -28,7 +28,19 @@ function App() {
 	const [userSettings, setUserSettings] = useState(userSettingsInitial);
 	const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
 	const [isMobile, setisMobile] = useState(checkIfMobileDevice());
-	const [sounds, setSounds] = useState<Sounds>({});
+	const audioSystem = useRef<AudioSystem>(
+		(() => {
+			const audioContext = new AudioContext();
+			const gainNode = audioContext.createGain();
+			gainNode.connect(audioContext.destination);
+
+			return {
+				context: audioContext,
+				gain: gainNode,
+			};
+		})()
+	);
+	const audioBuffers = useRef<AudioBuffers>({});
 
 	function onResize() {
 		setisMobile(checkIfMobileDevice);
@@ -53,7 +65,7 @@ function App() {
 				}
 				doesParallaxUpdate={true /*!isMetaModalOpen*/}
 			/>
-			<SongPlayer userSettings={userSettings} sounds={sounds} isMobile={isMobile} />
+			<SongPlayer userSettings={userSettings} isMobile={isMobile} />
 			<MetaModal
 				isOpen={isMetaModalOpen}
 				onOpen={() => setIsMetaModalOpen(true)}
@@ -65,7 +77,12 @@ function App() {
 				}}
 				isMobile={isMobile}
 			/>
-			<LoadingScreen userSettings={userSettings} isMobile={isMobile} setSounds={setSounds} />
+			<LoadingScreen
+				userSettings={userSettings}
+				isMobile={isMobile}
+				audioSystem={audioSystem}
+				audioBuffers={audioBuffers}
+			/>
 		</>
 	);
 }

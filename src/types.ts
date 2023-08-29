@@ -9,7 +9,11 @@ export type Song = {
 };
 export type Songs = {readonly [key: string]: Readonly<Song>};
 
-export type Sounds = {[id: string]: ArrayBuffer};
+export type AudioSystem = {
+	context: AudioContext;
+	gain: GainNode;
+};
+export type AudioBuffers = {[id: string]: AudioBuffer};
 
 type SliderUserSetting = {readonly type: "slider"; value: number};
 type ToggleUserSetting = {readonly type: "toggle"; value: boolean};

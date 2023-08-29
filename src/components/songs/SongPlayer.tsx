@@ -4,7 +4,7 @@ import MobileControls from "./MobileControls";
 import NoteBox from "./Notebox";
 import style from "./SongPlayer.module.less";
 import SongReference from "./SongReference";
-import {Note, NoteName, Sounds, UserSettings} from "/src/types";
+import {Note, NoteName, UserSettings} from "/src/types";
 
 const keybindsToNotes: {[key: string]: NoteName} = {
 	"keybindA": "a",
@@ -16,17 +16,13 @@ const keybindsToNotes: {[key: string]: NoteName} = {
 
 export default function SongPlayer({
 	userSettings,
-	sounds,
 	isMobile,
 }: {
 	userSettings: UserSettings;
-	sounds: Sounds;
 	isMobile: boolean;
 }) {
 	const [notes, setNotes] = useState<Note[]>([]);
 	const noteId = useRef(0);
-
-	sounds; // REMOVE //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	function addNote(note: NoteName) {
 		setNotes((notes) => {
