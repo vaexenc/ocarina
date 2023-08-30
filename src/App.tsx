@@ -29,11 +29,22 @@ function App() {
 	const [isLoadingScreenOpen, setIsLoadingScreenOpen] = useState(true);
 	const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
 	const [isMobile, setisMobile] = useState(checkIfMobileDevice());
+
+	/*
+		todo: make this code cleaner? (useEffect, check for null)
+		i assumed a single useRef would suffice but without the if check
+		this code would leak memory
+	*/
+	const isAudioSystemInitialized = useRef(false);
 	const audioSystem = useRef<AudioSystem>(
 		(() => {
+			if (isAudioSystemInitialized.current) return {} as AudioSystem;
+
 			const audioContext = new AudioContext();
 			const gainNode = audioContext.createGain();
 			gainNode.connect(audioContext.destination);
+
+			isAudioSystemInitialized.current = true;
 
 			return {
 				context: audioContext,
@@ -41,6 +52,7 @@ function App() {
 			};
 		})()
 	);
+
 	const audioBuffers = useRef<AudioBuffers>({});
 
 	audioSystem.current.gain.gain.value = userSettings.find(
