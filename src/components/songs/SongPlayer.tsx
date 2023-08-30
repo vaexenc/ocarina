@@ -17,9 +17,11 @@ const keybindsToNotes: {[key: string]: NoteName} = {
 export default function SongPlayer({
 	userSettings,
 	isMobile,
+	isInputEnabled,
 }: {
 	userSettings: UserSettings;
 	isMobile: boolean;
+	isInputEnabled: boolean;
 }) {
 	const [notes, setNotes] = useState<Note[]>([]);
 	const noteId = useRef(0);
@@ -38,6 +40,7 @@ export default function SongPlayer({
 
 	useEffect(() => {
 		function handleKeyDown(event: KeyboardEvent) {
+			if (!isInputEnabled) return;
 			if (event.repeat) return;
 
 			Object.entries(keybindsToNotes).forEach(([keybindId, note]) => {
@@ -55,7 +58,7 @@ export default function SongPlayer({
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
 		};
-	}, [userSettings]);
+	}, [isInputEnabled, userSettings]);
 
 	return (
 		<div className={clsx(style["song-player"])}>

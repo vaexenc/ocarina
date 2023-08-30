@@ -26,6 +26,7 @@ const userSettingsInitial =
 
 function App() {
 	const [userSettings, setUserSettings] = useState(userSettingsInitial);
+	const [isLoadingScreenOpen, setIsLoadingScreenOpen] = useState(true);
 	const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
 	const [isMobile, setisMobile] = useState(checkIfMobileDevice());
 	const audioSystem = useRef<AudioSystem>(
@@ -69,7 +70,11 @@ function App() {
 				}
 				doesParallaxUpdate={true /*!isMetaModalOpen*/}
 			/>
-			<SongPlayer userSettings={userSettings} isMobile={isMobile} />
+			<SongPlayer
+				userSettings={userSettings}
+				isMobile={isMobile}
+				isInputEnabled={!isLoadingScreenOpen && !isMetaModalOpen}
+			/>
 			<MetaModal
 				isOpen={isMetaModalOpen}
 				onOpen={() => setIsMetaModalOpen(true)}
@@ -86,6 +91,7 @@ function App() {
 				isMobile={isMobile}
 				audioSystem={audioSystem}
 				audioBuffers={audioBuffers}
+				onClose={() => setIsLoadingScreenOpen(false)}
 			/>
 		</>
 	);

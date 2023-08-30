@@ -41,11 +41,13 @@ export default function LoadingScreen({
 	isMobile,
 	audioSystem,
 	audioBuffers,
+	onClose,
 }: {
 	userSettings: UserSettings;
 	isMobile: boolean;
 	audioSystem: React.MutableRefObject<AudioSystem>;
 	audioBuffers: React.MutableRefObject<AudioBuffers>;
+	onClose: () => void;
 }) {
 	const [progress, setProgress] = useState(0);
 	const [visible, setVisible] = useState(true);
@@ -158,6 +160,8 @@ export default function LoadingScreen({
 							setTimeout(() => {
 								setVisible(false);
 							}, 600);
+
+							onClose();
 						}
 					}}
 				>
