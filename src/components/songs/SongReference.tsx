@@ -2,7 +2,7 @@ import clsx from "clsx";
 import React, {useEffect, useRef} from "react";
 import NoteBox from "./Notebox";
 import style from "./SongReference.module.less";
-import {songs, songSlots} from "/src/song-data";
+import {songSlots, songs} from "/src/song-data";
 
 function updateSongReferenceElementStyle(element: HTMLElement) {
 	if (element.scrollHeight <= element.clientHeight) {
@@ -23,7 +23,7 @@ function updateSongReferenceElementStyle(element: HTMLElement) {
 	}
 }
 
-export default function SongReference() {
+export default function SongReference({currentSongId}: {currentSongId: string | null}) {
 	const songReferenceRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -64,6 +64,7 @@ export default function SongReference() {
 										key={songId}
 										text={<span style={{color: song.color}}>{song.name}</span>}
 										notes={[...song.notes]}
+										isHighlighted={songId === currentSongId}
 									/>
 								);
 							})}

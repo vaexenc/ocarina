@@ -21,40 +21,40 @@ function Button({className, src, onPress}: {className?: string; src: string; onP
 	);
 }
 
-export default function MobileControls({addNote}: {addNote: (note: NoteName) => void}) {
+export default function MobileControls({input}: {input: (note: NoteName) => void}) {
 	return (
 		<div className={style["mobile-controls"]}>
 			<div className="a-container">
 				<Button
 					className="a"
 					src={"images/buttons/a-simple.svg"}
-					onPress={() => addNote("a")}
+					onPress={() => input("a")}
 				/>
 			</div>
 			<div className="c-container">
 				<Button
 					className="c-up"
 					src={"images/buttons/c-up-simple.svg"}
-					onPress={() => addNote("u")}
+					onPress={() => input("u")}
 				/>
 
 				<div className="c-middle-buttons">
 					<Button
 						className="c-left"
 						src={"images/buttons/c-left-simple.svg"}
-						onPress={() => addNote("l")}
+						onPress={() => input("l")}
 					/>
 					<Button
 						className="c-right"
 						src={"images/buttons/c-right-simple.svg"}
-						onPress={() => addNote("r")}
+						onPress={() => input("r")}
 					/>
 				</div>
 
 				<Button
 					className="c-down"
 					src={"images/buttons/c-down-simple.svg"}
-					onPress={() => addNote("d")}
+					onPress={() => input("d")}
 				/>
 			</div>
 		</div>

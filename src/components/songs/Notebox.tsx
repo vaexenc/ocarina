@@ -7,13 +7,19 @@ export default function NoteBox({
 	className,
 	text,
 	notes,
+	isHighlighted,
 }: {
 	className?: string;
 	text: JSX.Element;
 	notes: Note[];
+	isHighlighted?: boolean;
 }) {
 	return (
-		<div className={clsx(style["note-box"], "note-box", className)}>
+		<div
+			className={clsx(style["note-box"], "note-box", className, {
+				[style["note-box--highlighted"]]: isHighlighted,
+			})}
+		>
 			<div className="text-container">
 				<div className="text">{text}</div>
 			</div>
@@ -29,7 +35,9 @@ export default function NoteBox({
 					{notes.map((note, i) => {
 						return (
 							<div
-								className="note-container"
+								className={clsx("note-container", {
+									"flashing": typeof note === "object" && note.isFlashing,
+								})}
 								key={typeof note === "object" ? note.id : i}
 							>
 								<img

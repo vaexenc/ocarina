@@ -1,10 +1,19 @@
 import clsx from "clsx";
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import MobileControls from "./MobileControls";
 import NoteBox from "./Notebox";
 import style from "./SongPlayer.module.less";
 import SongReference from "./SongReference";
-import {Note, NoteName, UserSettings} from "/src/types";
+import {songs} from "/src/song-data";
+import {
+	AudioBuffers,
+	AudioSystem,
+	Note,
+	NoteName,
+	NoteObject,
+	Song,
+	UserSettings,
+} from "/src/types";
 
 const keybindsToNotes: {[key: string]: NoteName} = {
 	"keybindA": "a",
@@ -18,17 +27,33 @@ export default function SongPlayer({
 	userSettings,
 	isMobile,
 	isInputEnabled,
+	onSongCorrect,
+	onSongEnd,
+	audioSystem,
+	audioBuffers,
+	currentSongId,
 }: {
 	userSettings: UserSettings;
 	isMobile: boolean;
 	isInputEnabled: boolean;
+	onSongCorrect: (songId: string, songData: Song) => void;
+	onSongEnd: () => void;
+	audioSystem: React.MutableRefObject<AudioSystem>;
+	audioBuffers: React.MutableRefObject<AudioBuffers>;
+	currentSongId: string | null;
 }) {
-	const [notes, setNotes] = useState<Note[]>([]);
-	const noteId = useRef(0);
+	const [text, setText] = useState(<span />);
+	const [notes, setNotes] = useState<NoteObject[]>([]);
+	const [songState, setSongState] = useState<"notPlaying" | "playing" | "playingCanCancel">(
+		"notPlaying"
+	);
+	const currentNoteId = useRef(1);
+	const currentPlayerId = useRef(0);
+	const currentSource = useRef<AudioBufferSourceNode | null>(null);
 
 	function addNote(note: NoteName) {
 		setNotes((notes) => {
-			const newNote: Note = {note: note, id: ++noteId.current};
+			const newNote: Note = {note: note, id: currentNoteId.current++};
 
 			if (notes.length > 7) {
 				return [...notes.slice(1), newNote];
@@ -38,9 +63,26 @@ export default function SongPlayer({
 		});
 	}
 
+	const input = useCallback(
+		(note: NoteName) => {
+			if (!isInputEnabled) return;
+			if (currentSongId && songState === "playing") return;
+
+			if (songState === "playingCanCancel") {
+				currentSource.current?.stop();
+				currentPlayerId.current++;
+				setNotes([]);
+				setSongState("notPlaying");
+				onSongEnd();
+			}
+
+			addNote(note);
+		},
+		[currentSongId, isInputEnabled, songState, onSongEnd]
+	);
+
 	useEffect(() => {
 		function handleKeyDown(event: KeyboardEvent) {
-			if (!isInputEnabled) return;
 			if (event.repeat) return;
 
 			Object.entries(keybindsToNotes).forEach(([keybindId, note]) => {
@@ -48,7 +90,7 @@ export default function SongPlayer({
 					event.key ===
 					userSettings.find((userSetting) => userSetting.id === keybindId)!.value
 				) {
-					addNote(note);
+					input(note);
 				}
 			});
 		}
@@ -58,25 +100,76 @@ export default function SongPlayer({
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
 		};
-	}, [isInputEnabled, userSettings]);
+	}, [userSettings, input]);
+
+	useEffect(() => {
+		const lastEightNotes = notes.slice(-8).map((note) => {
+			return note.note;
+		});
+		const songEntries = Object.entries(songs);
+		for (const songEntry of songEntries) {
+			const [songId, songData] = songEntry;
+
+			if (songData.notes.length > lastEightNotes.length) continue;
+
+			for (let i = 0; i < songData.notes.length; i++) {
+				if (
+					songData.notes[songData.notes.length - 1 - i] !==
+					lastEightNotes[lastEightNotes.length - 1 - i]
+				)
+					break;
+
+				if (i === songData.notes.length - 1) {
+					setText(
+						<span>
+							You played {songData.omitThe ? "" : "the"}{" "}
+							<span style={{color: songData.color}}>{songData.name}</span>.
+						</span>
+					);
+					onSongCorrect(songId, songData);
+					setSongState("playing");
+
+					for (let i = 0; i < songData.notes.length; i++) {
+						notes[notes.length - 1 - i].isFlashing = true;
+					}
+
+					const source = audioSystem.current.context.createBufferSource();
+					source.buffer = audioBuffers.current[songId];
+					const gainNode = audioSystem.current.context.createGain();
+					gainNode.connect(audioSystem.current.gain);
+					gainNode.gain.value = 0.6;
+					source.connect(gainNode);
+					currentSource.current = source;
+
+					const playerId = currentPlayerId.current;
+
+					setTimeout(() => {
+						source.start();
+
+						setTimeout(() => {
+							setSongState("playingCanCancel");
+						}, 1000);
+
+						setTimeout(() => {
+							if (currentPlayerId.current !== playerId) return;
+
+							source.stop();
+							setNotes([]);
+							setText(<span />);
+							onSongEnd();
+							setSongState("notPlaying");
+						}, audioBuffers.current[songId].duration * 1000 + 500);
+					}, 1000);
+				}
+			}
+		}
+	}, [notes, onSongCorrect, audioBuffers, audioSystem, onSongEnd]);
 
 	return (
 		<div className={clsx(style["song-player"])}>
-			<SongReference />
-			<NoteBox
-				className={"note-box-player"}
-				text={
-					<span>
-						You played the <span>Inverted Song of Time</span>. {/**/}
-						You played the <span>Inverted Song of Time</span>. {/**/}
-						You played the <span>Inverted Song of Time</span>. {/**/}
-						You played the <span>Inverted Song of Time</span>. {/**/}
-						You played the <span>Inverted Song of Time</span>.
-					</span>
-				}
-				notes={notes}
-			/>
-			{isMobile && <MobileControls addNote={addNote} />}
+			<SongReference currentSongId={currentSongId} />
+			<NoteBox className={"note-box-player"} text={text} notes={notes} />
+			{isMobile && <MobileControls input={input} />}
 		</div>
 	);
 }

@@ -14,6 +14,8 @@ const soundsToFetch = [
 	// {id: "start", url: "audio/start.ogg"},
 	{id: "song-correct", url: "audio/song-correct.ogg"},
 	{id: "confirm", url: "audio/confirm.ogg"},
+	{id: "menu-open", url: "audio/menu-open.ogg"},
+	{id: "menu-close", url: "audio/menu-close.ogg"},
 ];
 
 function StoneSymbol({
@@ -42,12 +44,14 @@ export default function LoadingScreen({
 	audioSystem,
 	audioBuffers,
 	onClose,
+	showControls,
 }: {
 	userSettings: UserSettings;
 	isMobile: boolean;
 	audioSystem: React.MutableRefObject<AudioSystem>;
 	audioBuffers: React.MutableRefObject<AudioBuffers>;
 	onClose: () => void;
+	showControls: boolean;
 }) {
 	const [progress, setProgress] = useState(0);
 	const [visible, setVisible] = useState(true);
@@ -131,6 +135,7 @@ export default function LoadingScreen({
 	);
 
 	const areControlsHidden =
+		!showControls ||
 		isMobile ||
 		progress < 100 ||
 		!(

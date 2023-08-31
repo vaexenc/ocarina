@@ -1,5 +1,6 @@
 export type NoteName = "u" | "d" | "l" | "r" | "a";
-export type Note = NoteName | {note: NoteName; id: number | string};
+export type NoteObject = {note: NoteName; id: number | string; isFlashing?: true};
+export type Note = NoteName | NoteObject;
 export type Color = `#${string}`;
 export type Song = {
 	readonly name: string;
