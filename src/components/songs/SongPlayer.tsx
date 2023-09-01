@@ -47,7 +47,7 @@ export default function SongPlayer({
 	const [playerState, setPlayerState] = useState<"notPlaying" | "playing" | "playingCanCancel">(
 		"notPlaying"
 	);
-	const currentNoteId = useRef(1);
+	const currentNoteId = useRef(0);
 	const currentPlayerId = useRef(0);
 	const currentSongSource = useRef<AudioBufferSourceNode | null>(null);
 
