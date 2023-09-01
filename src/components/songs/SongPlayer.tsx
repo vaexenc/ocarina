@@ -44,7 +44,7 @@ export default function SongPlayer({
 }) {
 	const [text, setText] = useState(<span />);
 	const [notes, setNotes] = useState<NoteObject[]>([]);
-	const [songState, setSongState] = useState<"notPlaying" | "playing" | "playingCanCancel">(
+	const [playerState, setPlayerState] = useState<"notPlaying" | "playing" | "playingCanCancel">(
 		"notPlaying"
 	);
 	const currentNoteId = useRef(1);
@@ -66,19 +66,19 @@ export default function SongPlayer({
 	const input = useCallback(
 		(note: NoteName) => {
 			if (!isInputEnabled) return;
-			if (currentSongId && songState === "playing") return;
+			if (currentSongId && playerState === "playing") return;
 
-			if (songState === "playingCanCancel") {
+			if (playerState === "playingCanCancel") {
 				currentSource.current?.stop();
 				currentPlayerId.current++;
 				setNotes([]);
-				setSongState("notPlaying");
+				setPlayerState("notPlaying");
 				onSongEnd();
 			}
 
 			addNote(note);
 		},
-		[currentSongId, isInputEnabled, songState, onSongEnd]
+		[currentSongId, isInputEnabled, playerState, onSongEnd]
 	);
 
 	useEffect(() => {
@@ -127,7 +127,7 @@ export default function SongPlayer({
 						</span>
 					);
 					onSongCorrect(songId, songData);
-					setSongState("playing");
+					setPlayerState("playing");
 
 					for (let i = 0; i < songData.notes.length; i++) {
 						notes[notes.length - 1 - i].isFlashing = true;
@@ -147,7 +147,7 @@ export default function SongPlayer({
 						source.start();
 
 						setTimeout(() => {
-							setSongState("playingCanCancel");
+							setPlayerState("playingCanCancel");
 						}, 1000);
 
 						setTimeout(() => {
@@ -157,7 +157,7 @@ export default function SongPlayer({
 							setNotes([]);
 							setText(<span />);
 							onSongEnd();
-							setSongState("notPlaying");
+							setPlayerState("notPlaying");
 						}, audioBuffers.current[songId].duration * 1000 + 500);
 					}, 1000);
 				}
