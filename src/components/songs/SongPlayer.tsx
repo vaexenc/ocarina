@@ -49,7 +49,7 @@ export default function SongPlayer({
 	);
 	const currentNoteId = useRef(1);
 	const currentPlayerId = useRef(0);
-	const currentSource = useRef<AudioBufferSourceNode | null>(null);
+	const currentSongSource = useRef<AudioBufferSourceNode | null>(null);
 
 	function addNote(note: NoteName) {
 		setNotes((notes) => {
@@ -69,7 +69,7 @@ export default function SongPlayer({
 			if (currentSongId && playerState === "playing") return;
 
 			if (playerState === "playingCanCancel") {
-				currentSource.current?.stop();
+				currentSongSource.current?.stop();
 				currentPlayerId.current++;
 				setNotes([]);
 				setPlayerState("notPlaying");
@@ -139,7 +139,7 @@ export default function SongPlayer({
 					gainNode.connect(audioSystem.current.gain);
 					gainNode.gain.value = 0.6;
 					source.connect(gainNode);
-					currentSource.current = source;
+					currentSongSource.current = source;
 
 					const playerId = currentPlayerId.current;
 
