@@ -1,7 +1,7 @@
 import {UserSettings} from "/src/types";
 
 const defaultUserSettings: UserSettings = [
-	{id: "volume", name: "Volume", type: "slider", value: 0.5},
+	{id: "volume", name: "Volume", type: "slider", value: 0.25},
 	{
 		id: "bgMovement",
 		name: "Moving Background",
