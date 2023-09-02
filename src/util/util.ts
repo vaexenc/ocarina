@@ -55,3 +55,15 @@ export function fetchSoundWithRetry(
 			}, delay);
 		});
 }
+
+export function fadeOutSource(
+	audioContext: AudioContext,
+	source: AudioBufferSourceNode,
+	gainNode: GainNode,
+	fadeDuration: number
+) {
+	const currentTime = audioContext.currentTime;
+	gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
+	gainNode.gain.linearRampToValueAtTime(0, currentTime + fadeDuration);
+	source.stop(currentTime + fadeDuration);
+}

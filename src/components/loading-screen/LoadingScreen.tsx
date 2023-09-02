@@ -16,6 +16,7 @@ const soundsToFetch = [
 	{id: "confirm", url: "audio/confirm.ogg"},
 	{id: "menu-open", url: "audio/menu-open.ogg"},
 	{id: "menu-close", url: "audio/menu-close.ogg"},
+	{id: "ocarina-convolver-impulse", url: "audio/ocarina-convolver-impulse.ogg"},
 ];
 
 function StoneSymbol({

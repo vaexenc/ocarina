@@ -100,6 +100,7 @@ function App() {
 				doesParallaxUpdate={true /*!isMetaModalOpen*/}
 			/>
 			<SongPlayer
+				isReady={!isLoadingScreenOpen}
 				userSettings={userSettings}
 				isMobile={isMobile}
 				isInputEnabled={!isLoadingScreenOpen && !isMetaModalOpen}

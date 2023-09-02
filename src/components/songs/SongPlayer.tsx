@@ -14,6 +14,13 @@ import {
 	Song,
 	UserSettings,
 } from "/src/types";
+import {fadeOutSource} from "/src/util/util";
+
+const songStartDelay = 800;
+const canCancelDelay = 500;
+const songEndDelay = 500;
+const ocarinaFadeDuration = 0.3;
+const songStartOcarinaFadeoutDelay = -100;
 
 const keybindsToNotes: {[key: string]: NoteName} = {
 	"keybindA": "a",
@@ -23,7 +30,17 @@ const keybindsToNotes: {[key: string]: NoteName} = {
 	"keybindCRight": "r",
 };
 
+const notesToDetune: {[key in NoteName]: number} = {
+	// ocarina.ogg: g#
+	"a": -600, // d
+	"d": -300, // f
+	"r": 100, // a
+	"l": 300, // b
+	"u": 600, // d
+};
+
 export default function SongPlayer({
+	isReady,
 	userSettings,
 	isMobile,
 	isInputEnabled,
@@ -33,6 +50,7 @@ export default function SongPlayer({
 	audioBuffers,
 	currentSongId,
 }: {
+	isReady: boolean;
 	userSettings: UserSettings;
 	isMobile: boolean;
 	isInputEnabled: boolean;
@@ -47,13 +65,17 @@ export default function SongPlayer({
 	const [playerState, setPlayerState] = useState<"notPlaying" | "playing" | "playingCanCancel">(
 		"notPlaying"
 	);
-	const currentNoteId = useRef(0);
+	const nextNoteId = useRef(0);
 	const currentPlayerId = useRef(0);
 	const currentSongSource = useRef<AudioBufferSourceNode | null>(null);
+	const currentOcarinaSource = useRef<AudioBufferSourceNode | null>(null);
+	const currentOcarinaGain = useRef<GainNode | null>(null);
+	const currentNote = useRef<NoteName | null>(null);
+	const ocarinaConvolverNode = useRef(audioSystem.current.context.createConvolver());
 
 	function addNote(note: NoteName) {
 		setNotes((notes) => {
-			const newNote: Note = {note: note, id: currentNoteId.current++};
+			const newNote: Note = {note: note, id: nextNoteId.current++};
 
 			if (notes.length > 7) {
 				return [...notes.slice(1), newNote];
@@ -63,7 +85,7 @@ export default function SongPlayer({
 		});
 	}
 
-	const input = useCallback(
+	const inputPress = useCallback(
 		(note: NoteName) => {
 			if (!isInputEnabled) return;
 			if (currentSongId && playerState === "playing") return;
@@ -73,13 +95,67 @@ export default function SongPlayer({
 				currentPlayerId.current++;
 				setNotes([]);
 				setPlayerState("notPlaying");
+				setText(<span />);
 				onSongEnd();
 			}
 
 			addNote(note);
+
+			if (currentOcarinaSource.current && currentOcarinaGain.current) {
+				fadeOutSource(
+					audioSystem.current.context,
+					currentOcarinaSource.current,
+					currentOcarinaGain.current,
+					ocarinaFadeDuration
+				);
+			}
+
+			const source = audioSystem.current.context.createBufferSource();
+			source.buffer = audioBuffers.current["ocarina"];
+			const gainNode = audioSystem.current.context.createGain();
+			gainNode.gain.value = 0.3;
+			gainNode.connect(audioSystem.current.gain);
+			gainNode.connect(ocarinaConvolverNode.current);
+			source.connect(gainNode);
+			source.loop = true;
+			source.loopStart = 0.47;
+			source.loopEnd = 0.7163;
+			source.start();
+			source.detune.value = notesToDetune[note];
+
+			currentOcarinaSource.current = source;
+			currentOcarinaGain.current = gainNode;
+			currentNote.current = note;
 		},
-		[currentSongId, isInputEnabled, playerState, onSongEnd]
+		[currentSongId, isInputEnabled, playerState, onSongEnd, audioBuffers, audioSystem]
 	);
+
+	const inputRelease = useCallback(
+		(note: NoteName) => {
+			if (note !== currentNote.current) return;
+			if (!currentOcarinaSource.current || !currentOcarinaGain.current) return;
+			if (playerState === "playing") return;
+
+			fadeOutSource(
+				audioSystem.current.context,
+				currentOcarinaSource.current,
+				currentOcarinaGain.current,
+				ocarinaFadeDuration
+			);
+		},
+		[audioSystem, playerState]
+	);
+
+	useEffect(() => {
+		if (!isReady) return;
+
+		ocarinaConvolverNode.current.buffer = audioBuffers.current["ocarina-convolver-impulse"];
+		const gainNode = audioSystem.current.context.createGain();
+		gainNode.connect(audioSystem.current.gain);
+		gainNode.gain.value = 1;
+		ocarinaConvolverNode.current.connect(gainNode);
+		// eslint-disable-next-line
+	}, [isReady]);
 
 	useEffect(() => {
 		function handleKeyDown(event: KeyboardEvent) {
@@ -90,17 +166,30 @@ export default function SongPlayer({
 					event.key ===
 					userSettings.find((userSetting) => userSetting.id === keybindId)!.value
 				) {
-					input(note);
+					inputPress(note);
+				}
+			});
+		}
+
+		function handleKeyUp(event: KeyboardEvent) {
+			Object.entries(keybindsToNotes).forEach(([keybindId, note]) => {
+				if (
+					event.key ===
+					userSettings.find((userSetting) => userSetting.id === keybindId)!.value
+				) {
+					inputRelease(note);
 				}
 			});
 		}
 
 		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("keyup", handleKeyUp);
 
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("keyup", handleKeyUp);
 		};
-	}, [userSettings, input]);
+	}, [userSettings, inputPress, inputRelease]);
 
 	useEffect(() => {
 		const lastEightNotes = notes.slice(-8).map((note) => {
@@ -144,11 +233,22 @@ export default function SongPlayer({
 					const playerId = currentPlayerId.current;
 
 					setTimeout(() => {
+						if (currentOcarinaSource.current && currentOcarinaGain.current) {
+							fadeOutSource(
+								audioSystem.current.context,
+								currentOcarinaSource.current,
+								currentOcarinaGain.current,
+								ocarinaFadeDuration
+							);
+						}
+					}, Math.max(songStartDelay + songStartOcarinaFadeoutDelay, 0));
+
+					setTimeout(() => {
 						source.start();
 
 						setTimeout(() => {
 							setPlayerState("playingCanCancel");
-						}, 1000);
+						}, canCancelDelay);
 
 						setTimeout(() => {
 							if (currentPlayerId.current !== playerId) return;
@@ -158,8 +258,8 @@ export default function SongPlayer({
 							setText(<span />);
 							onSongEnd();
 							setPlayerState("notPlaying");
-						}, audioBuffers.current[songId].duration * 1000 + 500);
-					}, 1000);
+						}, audioBuffers.current[songId].duration * 1000 + songEndDelay);
+					}, songStartDelay);
 				}
 			}
 		}
@@ -169,7 +269,7 @@ export default function SongPlayer({
 		<div className={clsx(style["song-player"])}>
 			<SongReference currentSongId={currentSongId} />
 			<NoteBox className={"note-box-player"} text={text} notes={notes} />
-			{isMobile && <MobileControls input={input} />}
+			{isMobile && <MobileControls inputPress={inputPress} inputRelease={inputRelease} />}
 		</div>
 	);
 }
