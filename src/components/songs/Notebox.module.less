@@ -7,15 +7,40 @@
 	background: rgba(0, 0, 0, 0.72);
 	border-radius: calc(var(--height) * 0.1923);
 	isolation: isolate;
-	transition: box-shadow 0.3s, outline 0.3s;
+	transition: box-shadow 0.3s, outline 0.3s, transform 0.3s;
 	outline-color: transparent;
 
 	&--highlighted {
 		outline: calc(var(--height) * 0.01) solid #3280fe;
-		box-shadow: //
-			0 0 calc(var(--height) * 0.1) #0150c9,
-			0 0 calc(var(--height) * 0.2) #0150c9;
 		z-index: 1;
+
+		@media (min-width: 650px) {
+			transform: scale(1.03);
+		}
+
+		:local {
+			animation: highlighted-animation 3s linear infinite;
+		}
+
+		@keyframes highlighted-animation {
+			0% {
+				box-shadow: //
+					0 0 calc(var(--height) * 0.05) fade(#0150c9, 80%),
+					0 0 calc(var(--height) * 0.1) fade(#0150c9, 80%);
+			}
+
+			50% {
+				box-shadow: //
+					0 0 calc(var(--height) * 0.1) #0150c9,
+					0 0 calc(var(--height) * 0.2) #0150c9;
+			}
+
+			100% {
+				box-shadow: //
+					0 0 calc(var(--height) * 0.05) fade(#0150c9, 80%),
+					0 0 calc(var(--height) * 0.1) fade(#0150c9, 80%);
+			}
+		}
 	}
 
 	& :global {
