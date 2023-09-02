@@ -170,11 +170,11 @@ const songSlots = {
 };
 
 const noteMap = {
-	u: {class: "note-up", image: "/images/buttons/c-up.svg"},
-	d: {class: "note-down", image: "/images/buttons/c-down.svg"},
-	l: {class: "note-left", image: "/images/buttons/c-left.svg"},
-	r: {class: "note-right", image: "/images/buttons/c-right.svg"},
-	a: {class: "note-a", image: "/images/buttons/a.svg"},
+	u: {class: "note-up", image: "images/buttons/c-up.svg"},
+	d: {class: "note-down", image: "images/buttons/c-down.svg"},
+	l: {class: "note-left", image: "images/buttons/c-left.svg"},
+	r: {class: "note-right", image: "images/buttons/c-right.svg"},
+	a: {class: "note-a", image: "images/buttons/a.svg"},
 };
 
 export {noteMap, songSlots, songs};

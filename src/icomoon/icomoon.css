@@ -1,10 +1,10 @@
 @font-face {
 	font-family: "ocarina";
-	src: url("/fonts/icomoon/ocarina.eot?5iw0lu");
-	src: url("/fonts/icomoon/ocarina.eot?5iw0lu#iefix") format("embedded-opentype"),
-		url("/fonts/icomoon/ocarina.ttf?5iw0lu") format("truetype"),
-		url("/fonts/icomoon/ocarina.woff?5iw0lu") format("woff"),
-		url("/fonts/icomoon/ocarina.svg?5iw0lu#ocarina") format("svg");
+	src: url("fonts/icomoon/ocarina.eot?5iw0lu");
+	src: url("fonts/icomoon/ocarina.eot?5iw0lu#iefix") format("embedded-opentype"),
+		url("fonts/icomoon/ocarina.ttf?5iw0lu") format("truetype"),
+		url("fonts/icomoon/ocarina.woff?5iw0lu") format("woff"),
+		url("fonts/icomoon/ocarina.svg?5iw0lu#ocarina") format("svg");
 	font-weight: normal;
 	font-style: normal;
 	font-display: block;

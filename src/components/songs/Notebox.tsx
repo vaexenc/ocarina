@@ -30,7 +30,7 @@ export default function NoteBox({
 					<div className="line" />
 					<div className="line" />
 				</div>
-				<img className="clef" src="/images/clef.svg" />
+				<img className="clef" src="images/clef.svg" />
 				<div className="notes">
 					{notes.map((note, i) => {
 						return (

@@ -12,4 +12,8 @@ export default defineConfig({
 			"/": resolve(__dirname),
 		},
 	},
+	build: {
+		assetsDir: "./",
+	},
+	base: "./",
 });
