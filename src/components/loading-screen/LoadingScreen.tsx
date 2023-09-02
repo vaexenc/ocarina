@@ -138,7 +138,7 @@ export default function LoadingScreen({
 	const areControlsHidden =
 		!showControls ||
 		isMobile ||
-		progress < 100 ||
+		progressModified < 100 ||
 		!(
 			userSettings.find((e) => e.id === "keybindA")?.value === "a" &&
 			userSettings.find((e) => e.id === "keybindCUp")?.value === "ArrowUp" &&
