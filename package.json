@@ -7,11 +7,12 @@
 		"dev": "vite",
 		"dev:host": "vite --host",
 		"build": "tsc && vite build",
+		"postbuild": "copy CNAME dist",
 		"lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
 		"preview": "vite preview",
 		"preview:host": "vite preview --host",
 		"format": "prettier --write .",
-		"deploy": "npm run build && gh-pages --dist ./dist --message \"github pages commit\" --no-history"
+		"deploy": "npm run build && npm run postbuild && gh-pages --dist ./dist --message \"github pages commit\" --no-history"
 	},
 	"dependencies": {
 		"react": "^18.2.0",
