@@ -2,7 +2,7 @@ import clsx from "clsx";
 import {useCallback, useEffect, useRef, useState} from "react";
 import MobileControls from "./MobileControls";
 import NoteBox from "./Notebox";
-import style from "./SongPlayer.module.less";
+import style from "./SongPlayer.module.scss";
 import SongReference from "./SongReference";
 import {songs} from "/src/song-data";
 import {

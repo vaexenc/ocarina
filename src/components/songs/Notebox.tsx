@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import style from "./Notebox.module.less";
+import style from "./Notebox.module.scss";
 import {noteMap} from "/src/song-data";
 import {Note} from "/src/types";
 

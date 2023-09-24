@@ -3,7 +3,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./icomoon/icomoon.css";
-import "./styles/main.less";
+import "./styles/main.scss";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
 	<React.StrictMode>

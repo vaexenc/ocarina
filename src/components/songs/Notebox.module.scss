@@ -31,8 +31,7 @@
 
 			50% {
 				box-shadow: //
-					0 0 calc(var(--height) * 0.1) #0150c9,
-					0 0 calc(var(--height) * 0.2) #0150c9;
+					0 0 calc(var(--height) * 0.1) #0150c9, 0 0 calc(var(--height) * 0.2) #0150c9;
 			}
 
 			100% {

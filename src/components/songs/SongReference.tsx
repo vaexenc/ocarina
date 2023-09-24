@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import React, {useEffect, useRef} from "react";
 import NoteBox from "./Notebox";
-import style from "./SongReference.module.less";
+import style from "./SongReference.module.scss";
 import {songSlots, songs} from "/src/song-data";
 
 function updateSongReferenceElementStyle(element: HTMLElement) {

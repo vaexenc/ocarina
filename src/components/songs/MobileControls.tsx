@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import style from "./MobileControls.module.less";
+import style from "./MobileControls.module.scss";
 import {NoteName} from "/src/types";
 
 function Button({

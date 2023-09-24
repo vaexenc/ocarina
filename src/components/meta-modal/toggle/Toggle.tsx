@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import style from "./Toggle.module.less";
+import style from "./Toggle.module.scss";
 
 export default function Toggle({isChecked}: {isChecked: boolean}) {
 	return (

@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import {useCallback, useEffect, useRef, useState} from "react";
-import style from "./MetaModal.module.less";
+import style from "./MetaModal.module.scss";
 import Keybind from "./keybind/Keybind";
 import RangeInput from "./range-input/RangeInput";
 import Toggle from "./toggle/Toggle";

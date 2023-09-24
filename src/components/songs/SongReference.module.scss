@@ -13,37 +13,37 @@
 	}
 
 	&.scrolled-up:not(.scrolled-down) {
-		@gradient-mask: linear-gradient(
+		$gradient-mask: linear-gradient(
 			180deg,
 			rgba(0, 0, 0, 1) 0%,
 			rgba(0, 0, 0, 1) 95%,
 			rgba(0, 0, 0, 0) 100%
 		);
-		-webkit-mask-image: @gradient-mask;
-		mask-image: @gradient-mask;
+		-webkit-mask-image: $gradient-mask;
+		mask-image: $gradient-mask;
 	}
 
 	&.scrolled-down:not(.scrolled-up) {
-		@gradient-mask: linear-gradient(
+		$gradient-mask: linear-gradient(
 			180deg,
 			rgba(0, 0, 0, 0) 0%,
 			rgba(0, 0, 0, 1) 5%,
 			rgba(0, 0, 0, 1) 100%
 		);
-		-webkit-mask-image: @gradient-mask;
-		mask-image: @gradient-mask;
+		-webkit-mask-image: $gradient-mask;
+		mask-image: $gradient-mask;
 	}
 
 	&.scrolled-up.scrolled-down {
-		@gradient-mask: linear-gradient(
+		$gradient-mask: linear-gradient(
 			180deg,
 			rgba(0, 0, 0, 0) 0%,
 			rgba(0, 0, 0, 1) 5%,
 			rgba(0, 0, 0, 1) 95%,
 			rgba(0, 0, 0, 0) 100%
 		);
-		-webkit-mask-image: @gradient-mask;
-		mask-image: @gradient-mask;
+		-webkit-mask-image: $gradient-mask;
+		mask-image: $gradient-mask;
 	}
 
 	:global {

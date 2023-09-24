@@ -1,4 +1,4 @@
-@transition-duration: 0.1s;
+$transition-duration: 0.1s;
 
 .toggle {
 	position: relative;
@@ -7,7 +7,7 @@
 	height: 16px;
 	background-color: #969aa1;
 	border-radius: 99999px;
-	transition: background-color @transition-duration;
+	transition: background-color $transition-duration;
 
 	&::before {
 		content: "";
@@ -19,8 +19,8 @@
 		height: 20px;
 		transform: translateY(-50%);
 		border-radius: 99999px;
-		transition: left @transition-duration, background-color @transition-duration,
-			filter @transition-duration;
+		transition: left $transition-duration, background-color $transition-duration,
+			filter $transition-duration;
 	}
 
 	&.checked {

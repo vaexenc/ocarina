@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import Color from "color";
 import {useEffect, useMemo, useRef, useState} from "react";
-import style from "./LoadingScreen.module.less";
+import style from "./LoadingScreen.module.scss";
 import {songs} from "/src/song-data";
 import {AudioBuffers, AudioSystem, UserSettings} from "/src/types";
 import {clamp, fetchSoundWithRetry, map} from "/src/util/util";

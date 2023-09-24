@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import {useCallback, useEffect, useRef} from "react";
-import style from "./Background.module.less";
+import style from "./Background.module.scss";
 import {clamp} from "/src/util/util";
 
 export default function Background({
