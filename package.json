@@ -15,6 +15,7 @@
 		"deploy": "npm run build && npm run postbuild && gh-pages --dist ./dist --message \"github pages commit\" --no-history"
 	},
 	"dependencies": {
+		"@react-spring/web": "^9.7.3",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0"
 	},
