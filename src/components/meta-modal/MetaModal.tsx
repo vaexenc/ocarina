@@ -1,14 +1,14 @@
 import clsx from "clsx";
 import {useCallback, useEffect, useState} from "react";
-import Keybind from "./keybind/Keybind";
-import RangeInput from "./range-input/RangeInput";
-import Toggle from "./toggle/Toggle";
+import Keybind from "./Keybind";
+import RangeInput from "./RangeInput";
+import Toggle from "./Toggle";
 import IconDiscord from "/src/images/icons/discord.svg?react";
 import IconGithub from "/src/images/icons/github.svg?react";
 import IconX from "/src/images/icons/x.svg?react";
 import {KeybindId, SettingId, SettingValues} from "/src/types";
-import {assertNever} from "/src/util/util";
-import {settingDefs} from "/src/util/user-settings/default-user-settings";
+import {assertNever} from "/src/util/assert";
+import {settingDefs} from "/src/settings/setting-defs";
 
 type ChangeSetting = <K extends SettingId>(id: K, value: SettingValues[K]) => void;
 

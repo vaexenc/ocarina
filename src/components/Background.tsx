@@ -1,7 +1,7 @@
 import {animated, useSpring} from "@react-spring/web";
 import clsx from "clsx";
 import {useCallback, useEffect} from "react";
-import {clamp} from "/src/util/util";
+import {clamp} from "/src/util/math";
 
 const bgElemClass =
 	"absolute [transform:scale(var(--scale))_translate(calc(var(--offset-x)*var(--offset-max-x)*-1),calc(var(--offset-y)*var(--offset-max-y)*-1))]";

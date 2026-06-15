@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {songs} from "/src/song-data";
+import {songs} from "/src/data/song-data";
 import {
 	AudioBuffers,
 	AudioSystem,

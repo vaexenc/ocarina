@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import React, {useEffect, useRef, useState} from "react";
-import NoteBox from "./Notebox";
-import {songSlots, songs} from "/src/song-data";
+import NoteBox from "./NoteBox";
+import {songSlots, songs} from "/src/data/song-data";
 
 // Full literal class strings so Tailwind's static scanner detects them
 // (interpolation would hide the class names from the scanner).

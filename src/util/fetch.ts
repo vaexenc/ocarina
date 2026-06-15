@@ -1,36 +1,3 @@
-export function lerp(value: number, min: number, max: number) {
-	return (max - min) * value + min;
-}
-
-export function norm(value: number, min: number, max: number) {
-	return (value - min) / (max - min);
-}
-
-export function map(
-	value: number,
-	sourceMin: number,
-	sourceMax: number,
-	destMin: number,
-	destMax: number
-) {
-	return lerp(norm(value, sourceMin, sourceMax), destMin, destMax);
-}
-
-export function clamp(value: number, min: number, max: number) {
-	return Math.min(Math.max(value, min), max);
-}
-
-export function assertNever(value: never): never {
-	throw new Error(`Unexpected value: ${String(value)}`);
-}
-
-export function checkIfMobileDevice() {
-	// True when the device's primary pointer is coarse (finger/stylus), i.e. a
-	// touch device. Unlike `"ontouchstart" in window` or a width check, this does
-	// not fire for touchscreen laptops driven by a mouse, or narrow desktop windows.
-	return window.matchMedia("(pointer: coarse)").matches;
-}
-
 export class FetchError extends Error {
 	readonly status?: number;
 	constructor(message: string, status?: number) {

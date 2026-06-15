@@ -8,7 +8,7 @@ import {
 	deleteSettings,
 	loadHasPlayed,
 	loadSettings,
-} from "./util/user-settings/user-settings";
+} from "./settings/settings";
 
 // `?reset` escape hatch: wipe persisted state, then strip the param. Must run before any read.
 if (new URL(window.location.href).searchParams.has("reset")) {

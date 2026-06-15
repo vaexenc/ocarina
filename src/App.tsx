@@ -1,12 +1,12 @@
 import {useCallback, useEffect, useRef, useState} from "react";
-import Background from "./components/background/Background";
-import LoadingScreen from "./components/loading-screen/LoadingScreen";
+import Background from "./components/Background";
+import LoadingScreen from "./components/LoadingScreen";
 import MetaModal from "./components/meta-modal/MetaModal";
 import SongPlayer from "./components/songs/SongPlayer";
 import {AudioBuffers, AudioSystem, SettingValues, Song} from "./types";
-import {markHasPlayed, saveSettings} from "./util/user-settings/user-settings";
+import {markHasPlayed, saveSettings} from "./settings/settings";
 import {createAudioSystem, playSound} from "./util/audio";
-import {checkIfMobileDevice} from "./util/util";
+import {checkIfMobileDevice} from "./util/dom";
 
 function App({
 	initialSettings,

@@ -5,11 +5,12 @@ import IconGoron from "/src/images/icons/goron.svg?react";
 import IconKokiri from "/src/images/icons/kokiri.svg?react";
 import IconTriforce from "/src/images/icons/triforce.svg?react";
 import IconZora from "/src/images/icons/zora.svg?react";
-import {songs} from "/src/song-data";
+import {songs} from "/src/data/song-data";
 import {AudioBuffers, AudioSystem, SettingValues} from "/src/types";
 import {playSound} from "/src/util/audio";
-import {clamp, fetchAsset, map} from "/src/util/util";
-import {defaultSettingValues, keybindIds} from "/src/util/user-settings/default-user-settings";
+import {fetchAsset} from "/src/util/fetch";
+import {clamp, map} from "/src/util/math";
+import {defaultSettingValues, keybindIds} from "/src/settings/setting-defs";
 
 const soundsToFetch = [
 	...Object.entries(songs).map((song) => {

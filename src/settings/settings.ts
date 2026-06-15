@@ -1,4 +1,4 @@
-import {defaultSettingValues} from "./default-user-settings";
+import {defaultSettingValues} from "./setting-defs";
 import {SettingValues} from "/src/types";
 
 const STORAGE_KEY = "ocarina.userSettings";

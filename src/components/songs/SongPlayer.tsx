@@ -1,5 +1,5 @@
 import MobileControls from "./MobileControls";
-import NoteBox from "./Notebox";
+import NoteBox from "./NoteBox";
 import SongReference from "./SongReference";
 import {useOcarinaPlayback} from "./use-ocarina-playback";
 import {AudioBuffers, AudioSystem, SettingValues, Song} from "/src/types";
