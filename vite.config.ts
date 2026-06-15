@@ -1,5 +1,4 @@
 import react from "@vitejs/plugin-react-swc";
-import {resolve} from "path";
 import {defineConfig} from "vite";
 import {ViteMinifyPlugin} from "vite-plugin-minify";
 import svgr from "vite-plugin-svgr";
@@ -27,13 +26,8 @@ export default defineConfig({
 		injectHtmlPlugin(),
 		ViteMinifyPlugin(),
 	],
-	resolve: {
-		alias: {
-			"/": resolve(__dirname),
-		},
-	},
 	build: {
 		assetsDir: "./",
 	},
-	base: "./",
+	base: "/",
 });
