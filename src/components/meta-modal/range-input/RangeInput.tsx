@@ -17,7 +17,7 @@ export default function RangeInput({
 	onChange: React.ChangeEventHandler<HTMLInputElement>;
 	onChangeDebounce: () => void;
 }) {
-	const timeoutRef = useRef<NodeJS.Timeout>();
+	const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
 	return (
 		<input

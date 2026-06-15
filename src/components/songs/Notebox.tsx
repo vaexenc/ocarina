@@ -11,7 +11,7 @@ export default function NoteBox({
 	isHighlighted,
 }: {
 	className?: string;
-	text: JSX.Element;
+	text: React.JSX.Element;
 	notes: Note[];
 	isHighlighted?: boolean;
 }) {
