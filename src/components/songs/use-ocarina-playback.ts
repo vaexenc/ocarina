@@ -264,15 +264,16 @@ export function useOcarinaPlayback({
 	}, [notes, playerState, playMatchedSong]);
 
 	useEffect(() => {
-		// Bend/vibrato keys are handled first and, when consumed, never fall through to note input.
-		// Input gating mirrors the note path (no presses while the modal or loading screen is up),
-		// while releases always run so held keys can't get stuck once input is re-enabled.
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.repeat) return;
-			if (!isInputEnabled) return;
 
+			// Bend/vibrato are reserved keys: always handled (and preventDefault'd) so they never
+			// fall through to note input or the browser, even while input is disabled.
 			if (handleModifierKeyDown(event)) return;
 
+			// Note presses are gated like the note path always was; releases (keyup) always run so a
+			// held key can't get stuck once input is re-enabled.
+			if (!isInputEnabled) return;
 			const note = keyToNote.get(event.key);
 			if (note) inputPress(note);
 		};

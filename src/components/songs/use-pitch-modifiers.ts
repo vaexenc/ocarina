@@ -14,6 +14,10 @@ const bendKeybindCents: Record<BendKeybindId, number> = {
 const vibratoRateHz = 6;
 const vibratoDepthCents = 35;
 
+// A bend glides to pitch rather than snapping. Ramping in cents is linear in semitones, which is
+// the musically natural glide.
+const bendGlideDuration = 0.08;
+
 export type PitchModifiers = {
 	/** Sum of all currently-held bend offsets, in cents. */
 	bendCents: () => number;
@@ -78,15 +82,16 @@ export function usePitchModifiers({
 
 	const isBendActive = useCallback(() => activeBends.current.size > 0, []);
 
-	// Push the live note's base pitch plus the current bend onto its source. The vibrato LFO, when
-	// connected, oscillates on top of this intrinsic value.
-	const applyDetune = useCallback(() => {
+	// Glide the live note from its current pitch to its base plus the current bend. Used when a bend
+	// key changes mid-note; a note's initial pitch is set at creation, not here. The vibrato LFO,
+	// when connected, oscillates on top of this intrinsic value.
+	const glideBend = useCallback(() => {
 		const source = liveSource.current;
 		if (!source) return;
-		source.detune.setValueAtTime(
-			liveBaseDetune.current + bendCents(),
-			audioSystem.context.currentTime
-		);
+		const now = audioSystem.context.currentTime;
+		source.detune.cancelScheduledValues(now);
+		source.detune.setValueAtTime(source.detune.value, now);
+		source.detune.linearRampToValueAtTime(liveBaseDetune.current + bendCents(), now + bendGlideDuration);
 	}, [audioSystem, bendCents]);
 
 	const disconnectVibrato = useCallback(() => {
@@ -118,10 +123,11 @@ export function usePitchModifiers({
 		(source: AudioBufferSourceNode, baseDetune: number) => {
 			liveSource.current = source;
 			liveBaseDetune.current = baseDetune;
-			applyDetune();
+			// The source is created already at its base + held-bend pitch, so there's nothing to set
+			// here — only a later bend key change glides it.
 			if (vibratoActive.current) connectVibrato();
 		},
-		[applyDetune, connectVibrato]
+		[connectVibrato]
 	);
 
 	const detach = useCallback(() => {
@@ -135,7 +141,7 @@ export function usePitchModifiers({
 				event.preventDefault();
 				activeBends.current.set(event.key, cents);
 				if (liveSource.current) {
-					applyDetune();
+					glideBend();
 					onBendLiveNote();
 				}
 				return true;
@@ -148,14 +154,14 @@ export function usePitchModifiers({
 			}
 			return false;
 		},
-		[keyToBendCents, vibratoKey, applyDetune, connectVibrato, onBendLiveNote]
+		[keyToBendCents, vibratoKey, glideBend, connectVibrato, onBendLiveNote]
 	);
 
 	const handleKeyUp = useCallback(
 		(event: KeyboardEvent) => {
 			if (keyToBendCents.has(event.key)) {
 				activeBends.current.delete(event.key);
-				applyDetune();
+				glideBend();
 				return true;
 			}
 			if (event.key === vibratoKey) {
@@ -165,7 +171,7 @@ export function usePitchModifiers({
 			}
 			return false;
 		},
-		[keyToBendCents, vibratoKey, applyDetune, disconnectVibrato]
+		[keyToBendCents, vibratoKey, glideBend, disconnectVibrato]
 	);
 
 	const reset = useCallback(() => {
