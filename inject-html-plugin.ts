@@ -14,7 +14,7 @@ function currentTimeStamp() {
 export default function injectHtmlPlugin() {
 	return {
 		name: "inject-html-plugin",
-		transformIndexHtml(html) {
+		transformIndexHtml(html: string) {
 			return html.replaceAll("$inject:date", currentTimeStamp());
 		},
 	};
