@@ -37,13 +37,7 @@ const bgElems = [
 	},
 ];
 
-export default function Background({
-	isParallaxOn,
-	doesParallaxUpdate,
-}: {
-	isParallaxOn: boolean;
-	doesParallaxUpdate: boolean;
-}) {
+export default function Background({isParallaxOn}: {isParallaxOn: boolean}) {
 	const [springs] = useSpring(
 		() => ({
 			x: 0,
@@ -59,12 +53,12 @@ export default function Background({
 
 	const handleMouseMove = useCallback(
 		(event: MouseEvent) => {
-			if (!isParallaxOn || !doesParallaxUpdate) return;
+			if (!isParallaxOn) return;
 
 			springs.x.start(clamp((event.clientX / window.innerWidth) * 2 - 1, -1, 1));
 			springs.y.start(clamp((event.clientY / window.innerHeight) * 2 - 1, -1, 1));
 		},
-		[isParallaxOn, doesParallaxUpdate, springs.x, springs.y]
+		[isParallaxOn, springs.x, springs.y]
 	);
 
 	useEffect(() => {

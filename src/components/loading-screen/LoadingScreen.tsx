@@ -92,11 +92,7 @@ export default function LoadingScreen({
 	}
 
 	const progressTotalAmount = soundsToFetch.length + 1; // + document load
-	let progressModified = progress;
-
-	if (progressModified > 99.99) {
-		progressModified = 100;
-	}
+	const progressModified = progress > 99.99 ? 100 : progress; // snap past float drift to a clean 100
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -133,21 +129,21 @@ export default function LoadingScreen({
 			{
 				isHidden: progressModified <= 0,
 				color: Color("#ffffff")
-					.mix(Color("#00c14f"), clamp(map(progressModified, 0, 33, 0, 1), 0, 1) * 1)
+					.mix(Color("#00c14f"), clamp(map(progressModified, 0, 33, 0, 1), 0, 1))
 					.hex(),
 				name: "kokiri" as const,
 			},
 			{
 				isHidden: progressModified < 33,
 				color: Color("#ffffff")
-					.mix(Color("#f22700"), clamp(map(progressModified, 33, 66, 0, 1), 0, 1) * 1)
+					.mix(Color("#f22700"), clamp(map(progressModified, 33, 66, 0, 1), 0, 1))
 					.hex(),
 				name: "goron" as const,
 			},
 			{
 				isHidden: progressModified < 66,
 				color: Color("#ffffff")
-					.mix(Color("#007dcc"), clamp(map(progressModified, 66, 100, 0, 1), 0, 1) * 1)
+					.mix(Color("#007dcc"), clamp(map(progressModified, 66, 100, 0, 1), 0, 1))
 					.hex(),
 				name: "zora" as const,
 			},
@@ -165,114 +161,110 @@ export default function LoadingScreen({
 
 	return (
 		visible && (
-			<>
-				<div
-					className={clsx(
-						"fixed inset-0 z-[10000] flex items-center justify-center overflow-hidden bg-black text-white select-none transition-opacity duration-500",
-						progressModified >= 100 && "cursor-pointer",
-						isFadingOut && "pointer-events-none opacity-0"
-					)}
-					onClick={() => {
-						if (progressModified >= 100) {
-							const source = audioSystem.current.context.createBufferSource();
-							source.buffer = audioBuffers.current.confirm;
-							source.connect(audioSystem.current.gain);
-							source.start();
+			<div
+				className={clsx(
+					"fixed inset-0 z-[10000] flex items-center justify-center overflow-hidden bg-black text-white select-none transition-opacity duration-500",
+					progressModified >= 100 && "cursor-pointer",
+					isFadingOut && "pointer-events-none opacity-0"
+				)}
+				onClick={() => {
+					if (progressModified >= 100) {
+						const source = audioSystem.current.context.createBufferSource();
+						source.buffer = audioBuffers.current.confirm;
+						source.connect(audioSystem.current.gain);
+						source.start();
 
-							setIsFadingOut(true);
-							setTimeout(() => {
-								setVisible(false);
-							}, 600);
+						setIsFadingOut(true);
+						setTimeout(() => {
+							setVisible(false);
+						}, 600);
 
-							onClose();
-						}
-					}}
-				>
-					<div className="relative">
-						<div className="relative flex items-center justify-center">
-							{stoneSymbolData.map((v) => (
-								<StoneSymbol
-									key={v.name}
-									isHidden={v.isHidden}
-									color={v.color}
-									name={v.name}
-								/>
-							))}
-						</div>
+						onClose();
+					}
+				}}
+			>
+				<div className="relative">
+					<div className="relative flex items-center justify-center">
+						{stoneSymbolData.map((v) => (
+							<StoneSymbol
+								key={v.name}
+								isHidden={v.isHidden}
+								color={v.color}
+								name={v.name}
+							/>
+						))}
+					</div>
+					<div
+						className={clsx(
+							"relative mt-[30px] mx-auto h-[2px] w-[250px] z-[10] bg-[gray] pointer-events-none transition-[opacity,transform] duration-500",
+							progressModified >= 100
+								? "opacity-0 [transform:translateY(7px)]"
+								: "opacity-100"
+						)}
+					>
+						<div
+							className="h-full w-(--progress) bg-white transition-[width] duration-300 [filter:drop-shadow(0_0_4px_rgba(255,255,255,1))]"
+							style={
+								{
+									"--progress": `${progressModified}%`,
+								} as React.CSSProperties
+							}
+						></div>
+					</div>
+					<div
+						className={clsx(
+							"absolute top-[calc(100%+30px)] w-full text-center text-[16px] leading-[1.5] tracking-[0.025em] text-[#f22700] transition-opacity duration-500 [filter:drop-shadow(0_0_0.15em_rgba(242,39,0,0.8))_drop-shadow(0_0_0.3em_rgba(242,39,0,0.5))]",
+							failedCount <= 0 ? "pointer-events-none opacity-0" : "opacity-100"
+						)}
+					>
+						{`Failed to load ${failedCount} file${failedCount === 1 ? "" : "s"}.`}
+						<br />
+						Please refresh the page to try again.
+					</div>
+					<IconTriforce
+						className={clsx(
+							"absolute top-1/2 left-1/2 z-[-1] h-auto w-[240px] pointer-events-none transition-[opacity,filter] duration-[2s] delay-[0.25s] [transform:translate(-50%,calc(-50%-30px))]",
+							progressModified < 100
+								? "opacity-0 [filter:none]"
+								: "opacity-100 [filter:drop-shadow(0_0_30px_rgba(255,255,255,1))_drop-shadow(0_0_5px_rgba(255,255,255,0.5))]"
+						)}
+					/>
+					<div
+						className={clsx(
+							"absolute top-[calc(100%+30px)] w-full text-center text-[24px] tracking-[0.025em] text-white transition-opacity duration-[3s] delay-[1.5s] [filter:drop-shadow(0_0_0.1em_rgba(255,255,255,1))_drop-shadow(0_0_0.15em_rgba(255,255,255,0.8))]",
+							progressModified < 100 ? "opacity-0" : "opacity-100"
+						)}
+					>
 						<div
 							className={clsx(
-								"relative mt-[30px] mx-auto h-[2px] w-[250px] z-[10] bg-[gray] pointer-events-none transition-[opacity,transform] duration-500",
-								progressModified >= 100
-									? "opacity-0 [transform:translateY(7px)]"
-									: "opacity-100"
+								"opacity-0",
+								progressModified >= 100 && "animate-continue"
 							)}
 						>
-							<div
-								className="h-full w-(--progress) bg-white transition-[width] duration-300 [filter:drop-shadow(0_0_4px_rgba(255,255,255,1))]"
-								style={
-									{
-										"--progress": `${progressModified}%`,
-									} as React.CSSProperties
-								}
-							></div>
+							{isMobile ? "Tap to continue" : "Click to continue"}
 						</div>
-						<div
-							className={clsx(
-								"absolute top-[calc(100%+30px)] w-full text-center text-[16px] leading-[1.5] tracking-[0.025em] text-[#f22700] transition-opacity duration-500 [filter:drop-shadow(0_0_0.15em_rgba(242,39,0,0.8))_drop-shadow(0_0_0.3em_rgba(242,39,0,0.5))]",
-								failedCount <= 0 ? "pointer-events-none opacity-0" : "opacity-100"
-							)}
-						>
-							{`Failed to load ${failedCount} file${failedCount === 1 ? "" : "s"}.`}
-							<br />
-							Please refresh the page to try again.
-						</div>
-						<IconTriforce
-							className={clsx(
-								"absolute top-1/2 left-1/2 z-[-1] h-auto w-[240px] pointer-events-none transition-[opacity,filter] duration-[2s] delay-[0.25s] [transform:translate(-50%,calc(-50%-30px))]",
-								progressModified < 100
-									? "opacity-0 [filter:none]"
-									: "opacity-100 [filter:drop-shadow(0_0_30px_rgba(255,255,255,1))_drop-shadow(0_0_5px_rgba(255,255,255,0.5))]"
-							)}
-						/>
-						<div
-							className={clsx(
-								"absolute top-[calc(100%+30px)] w-full text-center text-[24px] tracking-[0.025em] text-white transition-opacity duration-[3s] delay-[1.5s] [filter:drop-shadow(0_0_0.1em_rgba(255,255,255,1))_drop-shadow(0_0_0.15em_rgba(255,255,255,0.8))]",
-								progressModified < 100 ? "opacity-0" : "opacity-100"
-							)}
-						>
-							<div
-								className={clsx(
-									"opacity-0",
-									progressModified >= 100 && "animate-continue"
-								)}
-							>
-								{isMobile ? "Tap to continue" : "Click to continue"}
-							</div>
-						</div>
+					</div>
 
-						<div
-							className={clsx(
-								"absolute top-[calc(100%+110px)] left-0 right-0 flex w-full justify-center pt-[30px] text-[16px] transition-opacity duration-[3s] delay-[2s] [filter:drop-shadow(0_0_0.1em_rgba(255,255,255,1))_drop-shadow(0_0_0.15em_rgba(255,255,255,0.8))] before:absolute before:top-0 before:left-1/2 before:h-px before:w-[85%] before:bg-white before:content-[''] before:[transform:translateX(-50%)]",
-								areControlsHidden ? "opacity-0" : "opacity-80"
-							)}
-						>
-							<div className="flex items-center justify-center">
-								<div className={clsx(controlButtonClass, "m-[0.1em]")}>A</div>
-							</div>
-							<div className="ml-[2em]">
-								<div className={clsx(controlButtonClass, "mx-auto mb-[0.2em]")}>
-									↑
-								</div>
-								<div className="flex">
-									<div className={clsx(controlButtonClass, "m-[0.1em]")}>←</div>
-									<div className={clsx(controlButtonClass, "m-[0.1em]")}>↓</div>
-									<div className={clsx(controlButtonClass, "m-[0.1em]")}>→</div>
-								</div>
+					<div
+						className={clsx(
+							"absolute top-[calc(100%+110px)] left-0 right-0 flex w-full justify-center pt-[30px] text-[16px] transition-opacity duration-[3s] delay-[2s] [filter:drop-shadow(0_0_0.1em_rgba(255,255,255,1))_drop-shadow(0_0_0.15em_rgba(255,255,255,0.8))] before:absolute before:top-0 before:left-1/2 before:h-px before:w-[85%] before:bg-white before:content-[''] before:[transform:translateX(-50%)]",
+							areControlsHidden ? "opacity-0" : "opacity-80"
+						)}
+					>
+						<div className="flex items-center justify-center">
+							<div className={clsx(controlButtonClass, "m-[0.1em]")}>A</div>
+						</div>
+						<div className="ml-[2em]">
+							<div className={clsx(controlButtonClass, "mx-auto mb-[0.2em]")}>↑</div>
+							<div className="flex">
+								<div className={clsx(controlButtonClass, "m-[0.1em]")}>←</div>
+								<div className={clsx(controlButtonClass, "m-[0.1em]")}>↓</div>
+								<div className={clsx(controlButtonClass, "m-[0.1em]")}>→</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			</>
+			</div>
 		)
 	);
 }

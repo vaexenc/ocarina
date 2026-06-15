@@ -3,24 +3,19 @@ import Background from "./components/background/Background";
 import LoadingScreen from "./components/loading-screen/LoadingScreen";
 import MetaModal from "./components/meta-modal/MetaModal";
 import SongPlayer from "./components/songs/SongPlayer";
-import {AudioBuffers, AudioSystem, Song} from "./types";
-import {deleteSettings, loadSettings, saveSettings} from "./util/user-settings/user-settings";
+import {AudioBuffers, AudioSystem, SettingValues, Song} from "./types";
+import {saveSettings} from "./util/user-settings/user-settings";
 import {createAudioSystem, playSound} from "./util/audio";
 import {checkIfMobileDevice} from "./util/util";
 
-if (new URL(window.location.href).searchParams.has("reset")) {
-	deleteSettings();
-	localStorage.removeItem("ocarina.hasPlayedBefore");
-
-	const urlWithoutParameters = window.location.origin + window.location.pathname;
-	window.history.replaceState({}, document.title, urlWithoutParameters);
-}
-
-const settingsInitial = loadSettings();
-const hasPlayedBefore = !!localStorage.getItem("ocarina.hasPlayedBefore");
-
-function App() {
-	const [settings, setSettings] = useState(settingsInitial);
+function App({
+	initialSettings,
+	hasPlayedBefore,
+}: {
+	initialSettings: SettingValues;
+	hasPlayedBefore: boolean;
+}) {
+	const [settings, setSettings] = useState(initialSettings);
 	const [isLoadingScreenOpen, setIsLoadingScreenOpen] = useState(true);
 	const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
 	const [isMobile, setIsMobile] = useState(checkIfMobileDevice());
@@ -70,10 +65,7 @@ function App() {
 
 	return (
 		<>
-			<Background
-				isParallaxOn={!isMobile && settings.bgMovement}
-				doesParallaxUpdate={true /*!isMetaModalOpen*/}
-			/>
+			<Background isParallaxOn={!isMobile && settings.bgMovement} />
 			<SongPlayer
 				isReady={!isLoadingScreenOpen}
 				settings={settings}
@@ -83,7 +75,6 @@ function App() {
 				onSongEnd={onSongEnd}
 				audioSystem={audioSystem}
 				audioBuffers={audioBuffers}
-				currentSongId={currentSongId}
 			/>
 			<MetaModal
 				isOpen={isMetaModalOpen}

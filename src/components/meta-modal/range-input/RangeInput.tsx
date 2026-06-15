@@ -20,7 +20,7 @@ export default function RangeInput({
 			min={min}
 			max={max}
 			step={step}
-			defaultValue={value}
+			value={value}
 			style={{"--value": `${value * 100}%`} as React.CSSProperties}
 			onChange={onChange}
 		/>
