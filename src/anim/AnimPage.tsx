@@ -38,12 +38,21 @@ interface Layer {
 	key: string;
 	count: number;
 	visible: boolean;
+	// "Deleted" parts are parked in a separate category and forced hidden in the
+	// scene, regardless of their `visible` flag, until moved back.
+	deleted: boolean;
+}
+
+// A part's meshes are shown only when it's visible and not deleted.
+function effectiveVisible(l: Pick<Layer, "visible" | "deleted">): boolean {
+	return l.visible && !l.deleted;
 }
 
 const PARTS_KEY = "ocarina.animPartsVisibility";
+const DELETED_KEY = "ocarina.animPartsDeleted";
 
-function loadPartsVisibility(): Record<string, boolean> {
-	const raw = localStorage.getItem(PARTS_KEY);
+function loadStringBoolMap(storageKey: string): Record<string, boolean> {
+	const raw = localStorage.getItem(storageKey);
 	if (!raw) return {};
 	try {
 		return JSON.parse(raw) as Record<string, boolean>;
@@ -52,18 +61,43 @@ function loadPartsVisibility(): Record<string, boolean> {
 	}
 }
 
-function savePartsVisibility(layers: Layer[]) {
-	const map: Record<string, boolean> = {};
-	for (const l of layers) map[l.key] = l.visible;
-	localStorage.setItem(PARTS_KEY, JSON.stringify(map));
+function savePartsState(layers: Layer[]) {
+	const visibility: Record<string, boolean> = {};
+	const deleted: Record<string, boolean> = {};
+	for (const l of layers) {
+		visibility[l.key] = l.visible;
+		if (l.deleted) deleted[l.key] = true;
+	}
+	localStorage.setItem(PARTS_KEY, JSON.stringify(visibility));
+	localStorage.setItem(DELETED_KEY, JSON.stringify(deleted));
 }
 
-// Human-readable text dump of the current visibility, e.g. for sharing/saving.
-function partsToText(layers: Layer[]): string {
-	const shown = layers.filter((l) => l.visible).map((l) => l.key);
-	const hidden = layers.filter((l) => !l.visible).map((l) => l.key);
-	const fmt = (list: string[]) => (list.length ? list.map((k) => `  ${k}`).join("\n") : "  (none)");
-	return `# Link ocarina — part visibility\nshown:\n${fmt(shown)}\nhidden:\n${fmt(hidden)}\n`;
+const PARTS_FILE_TYPE = "ocarina-anim-parts";
+
+interface PartEntry {
+	key: string;
+	visible: boolean;
+	deleted: boolean;
+}
+
+// JSON dump of the current visibility + deleted state, for saving/sharing and
+// re-importing later.
+function partsToJson(layers: Layer[]): string {
+	const parts: PartEntry[] = layers.map((l) => ({key: l.key, visible: l.visible, deleted: l.deleted}));
+	return JSON.stringify({type: PARTS_FILE_TYPE, version: 1, parts}, null, 2);
+}
+
+// Pull a key -> {visible, deleted} map out of an imported file. Accepts both the
+// wrapped {type, parts} shape and a bare array of part entries.
+function parsePartsJson(text: string): Map<string, Partial<PartEntry>> {
+	const data = JSON.parse(text) as unknown;
+	const parts = Array.isArray(data) ? data : (data as {parts?: unknown})?.parts;
+	if (!Array.isArray(parts)) throw new Error("no parts array found");
+	const map = new Map<string, Partial<PartEntry>>();
+	for (const p of parts as Partial<PartEntry>[]) {
+		if (p && typeof p.key === "string") map.set(p.key, p);
+	}
+	return map;
 }
 
 interface SkeletonData {
@@ -78,7 +112,7 @@ export default function AnimPage() {
 	const [status, setStatus] = useState("Loading model…");
 	const [playing, setPlaying] = useState(true);
 	const [layers, setLayers] = useState<Layer[]>([]);
-	const [copied, setCopied] = useState(false);
+	const [exported, setExported] = useState(false);
 
 	// Live value the animation loop reads without restarting the effect.
 	const playingRef = useRef(true);
@@ -88,26 +122,67 @@ export default function AnimPage() {
 	const groupsRef = useRef<Map<string, SkinnedMesh[]>>(new Map());
 
 	const setLayerVisible = (key: string, visible: boolean) => {
-		groupsRef.current.get(key)?.forEach((m) => (m.visible = visible));
-		setLayers((prev) => prev.map((l) => (l.key === key ? {...l, visible} : l)));
+		setLayers((prev) =>
+			prev.map((l) => {
+				if (l.key !== key) return l;
+				const next = {...l, visible};
+				groupsRef.current.get(key)?.forEach((m) => (m.visible = effectiveVisible(next)));
+				return next;
+			})
+		);
 	};
 	const setAllVisible = (visible: boolean) => {
-		groupsRef.current.forEach((ms) => ms.forEach((m) => (m.visible = visible)));
-		setLayers((prev) => prev.map((l) => ({...l, visible})));
+		setLayers((prev) =>
+			prev.map((l) => {
+				if (l.deleted) return l; // leave parked parts hidden
+				groupsRef.current.get(l.key)?.forEach((m) => (m.visible = visible));
+				return {...l, visible};
+			})
+		);
+	};
+	// Move a part into / out of the "deleted" category.
+	const setLayerDeleted = (key: string, deleted: boolean) => {
+		setLayers((prev) =>
+			prev.map((l) => {
+				if (l.key !== key) return l;
+				const next = {...l, deleted};
+				groupsRef.current.get(key)?.forEach((m) => (m.visible = effectiveVisible(next)));
+				return next;
+			})
+		);
 	};
 
-	// Persist visibility whenever it changes (skips the initial empty state).
+	// Persist visibility + deleted state whenever it changes (skips the initial
+	// empty state).
 	useEffect(() => {
-		if (layers.length > 0) savePartsVisibility(layers);
+		if (layers.length > 0) savePartsState(layers);
 	}, [layers]);
 
 	const exportToggles = () => {
-		const text = partsToText(layers);
+		const json = partsToJson(layers);
 		const ok = () => {
-			setCopied(true);
-			setTimeout(() => setCopied(false), 1500);
+			setExported(true);
+			setTimeout(() => setExported(false), 1500);
 		};
-		navigator.clipboard?.writeText(text).then(ok, () => window.prompt("Parts visibility:", text));
+		navigator.clipboard?.writeText(json).then(ok, () => window.prompt("Parts JSON:", json));
+	};
+
+	const importToggles = async () => {
+		try {
+			const text = await navigator.clipboard.readText();
+			const incoming = parsePartsJson(text);
+			setLayers((prev) =>
+				prev.map((l) => {
+					const p = incoming.get(l.key);
+					if (!p) return l;
+					const next = {...l, visible: p.visible ?? l.visible, deleted: p.deleted ?? l.deleted};
+					groupsRef.current.get(l.key)?.forEach((m) => (m.visible = effectiveVisible(next)));
+					return next;
+				})
+			);
+		} catch (e) {
+			window.alert("Import failed: " + (e instanceof Error ? e.message : String(e)));
+		}
 	};
 
 	useEffect(() => {
@@ -256,13 +331,15 @@ export default function AnimPage() {
 				if (arr) arr.push(mesh);
 				else groups.set(label, [mesh]);
 			}
-			const stored = loadPartsVisibility();
+			const stored = loadStringBoolMap(PARTS_KEY);
+			const storedDeleted = loadStringBoolMap(DELETED_KEY);
 			setLayers(
 				[...groups.entries()]
 					.map(([key, ms]) => {
 						const visible = stored[key] ?? true;
-						for (const m of ms) m.visible = visible;
-						return {key, count: ms.length, visible};
+						const deleted = storedDeleted[key] ?? false;
+						for (const m of ms) m.visible = effectiveVisible({visible, deleted});
+						return {key, count: ms.length, visible, deleted};
 					})
 					.sort((a, b) => a.key.localeCompare(b.key))
 			);
@@ -347,27 +424,64 @@ export default function AnimPage() {
 								onClick={exportToggles}
 								className="rounded bg-white/10 px-2 py-0.5 text-xs hover:bg-white/20"
 							>
-								{copied ? "copied!" : "export"}
+								{exported ? "saved!" : "export"}
+							</button>
+							<button
+								onClick={importToggles}
+								className="rounded bg-white/10 px-2 py-0.5 text-xs hover:bg-white/20"
+							>
+								import
 							</button>
 						</span>
 					</div>
 					<div className="flex flex-col overflow-y-auto px-3 pb-2">
-						{layers.map((l) => (
-							<label
-								key={l.key}
-								className="flex cursor-pointer items-center gap-2 py-0.5 hover:text-white/70"
-							>
-								<input
-									type="checkbox"
-									checked={l.visible}
-									onChange={(e) => setLayerVisible(l.key, e.target.checked)}
-								/>
-								<span className="truncate">
-									{l.key}
-									{l.count > 1 ? ` (${l.count})` : ""}
-								</span>
-							</label>
-						))}
+						{layers
+							.filter((l) => !l.deleted)
+							.map((l) => (
+								<div key={l.key} className="group flex items-center gap-2 py-0.5">
+									<label className="flex flex-1 cursor-pointer items-center gap-2 truncate hover:text-white/70">
+										<input
+											type="checkbox"
+											checked={l.visible}
+											onChange={(e) => setLayerVisible(l.key, e.target.checked)}
+										/>
+										<span className="truncate">
+											{l.key}
+											{l.count > 1 ? ` (${l.count})` : ""}
+										</span>
+									</label>
+									<button
+										onClick={() => setLayerDeleted(l.key, true)}
+										title="move to deleted"
+										className="text-xs text-white/30 hover:text-red-400 group-hover:text-white/60"
+									>
+										✕
+									</button>
+								</div>
+							))}
+
+						{layers.some((l) => l.deleted) && (
+							<div className="mt-2 border-t border-white/10 pt-2">
+								<div className="mb-1 text-xs font-semibold text-white/50">Deleted</div>
+								{layers
+									.filter((l) => l.deleted)
+									.map((l) => (
+										<div key={l.key} className="flex items-center gap-2 py-0.5">
+											<span className="flex-1 truncate text-white/40 line-through">
+												{l.key}
+												{l.count > 1 ? ` (${l.count})` : ""}
+											</span>
+											<button
+												onClick={() => setLayerDeleted(l.key, false)}
+												title="restore"
+												className="text-xs text-white/50 hover:text-emerald-400"
+											>
+												restore
+											</button>
+										</div>
+									))}
+							</div>
+						)}
 					</div>
 				</div>
 			)}
