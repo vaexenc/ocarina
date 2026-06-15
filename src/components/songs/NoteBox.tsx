@@ -60,7 +60,9 @@ export default function NoteBox({
 							<div
 								className={clsx(
 									"relative h-full w-[calc(var(--height)*0.375)] pointer-events-none",
-									note.isFlashing && "animate-flashing"
+									note.isFlashing && "animate-flashing",
+									// Bent notes are excluded from song matching; show them dimmed and tilted.
+									note.isBent && "rotate-[12deg] opacity-60"
 								)}
 								key={note.id}
 							>

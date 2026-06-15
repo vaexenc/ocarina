@@ -87,7 +87,9 @@ function SettingControl({
 					>
 						<div className="mr-[1.5em]">
 							<div className="flex items-center">
-								<field.image className="mr-[10px] h-auto w-[40px]" />
+								{field.image && (
+									<field.image className="mr-[10px] h-auto w-[40px]" />
+								)}
 								{field.name}
 							</div>
 						</div>

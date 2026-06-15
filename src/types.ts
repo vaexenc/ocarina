@@ -3,7 +3,9 @@ import type {FunctionComponent, SVGProps} from "react";
 export type SvgComponent = FunctionComponent<SVGProps<SVGSVGElement> & {title?: string}>;
 
 export type NoteName = "u" | "d" | "l" | "r" | "a";
-export type NoteObject = {note: NoteName; id: number | string; isFlashing?: true};
+// `isBent` marks a note whose pitch was bent (semitone/whole-tone) while sounding. Such a
+// note is excluded from song matching. Vibrato is purely cosmetic and does not set this.
+export type NoteObject = {note: NoteName; id: number | string; isFlashing?: true; isBent?: true};
 export type Color = `#${string}`;
 export type Song = {
 	readonly name: string;
@@ -30,6 +32,11 @@ export type SettingValues = {
 	keybindCDown: string;
 	keybindCLeft: string;
 	keybindCRight: string;
+	keybindBendWholeDown: string;
+	keybindBendSemiDown: string;
+	keybindBendSemiUp: string;
+	keybindBendWholeUp: string;
+	keybindVibrato: string;
 };
 export type SettingId = keyof SettingValues;
 export type KeybindId =
@@ -37,7 +44,12 @@ export type KeybindId =
 	| "keybindCUp"
 	| "keybindCDown"
 	| "keybindCLeft"
-	| "keybindCRight";
+	| "keybindCRight"
+	| "keybindBendWholeDown"
+	| "keybindBendSemiDown"
+	| "keybindBendSemiUp"
+	| "keybindBendWholeUp"
+	| "keybindVibrato";
 
 // The static metadata describing how each setting is rendered, in display order.
 // Discriminating on `type` narrows `id`, which in turn types the value lookup, so
@@ -47,7 +59,7 @@ type ToggleField = {readonly type: "toggle"; readonly id: "bgMovement"; readonly
 type KeybindField = {
 	readonly type: "keybind";
 	readonly id: KeybindId;
-	readonly image: SvgComponent;
+	readonly image?: SvgComponent;
 	readonly default: string;
 };
 export type SettingField = {

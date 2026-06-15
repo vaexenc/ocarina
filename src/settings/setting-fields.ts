@@ -59,6 +59,41 @@ export const settingFields: readonly SettingField[] = [
 		default: "ArrowRight",
 		hideOnMobile: true,
 	},
+	{
+		id: "keybindBendSemiDown",
+		name: "Bend Down (Semitone)",
+		type: "keybind",
+		default: "q",
+		hideOnMobile: true,
+	},
+	{
+		id: "keybindBendWholeUp",
+		name: "Bend Up (Whole Tone)",
+		type: "keybind",
+		default: "w",
+		hideOnMobile: true,
+	},
+	{
+		id: "keybindBendSemiUp",
+		name: "Bend Up (Semitone)",
+		type: "keybind",
+		default: "e",
+		hideOnMobile: true,
+	},
+	{
+		id: "keybindBendWholeDown",
+		name: "Bend Down (Whole Tone)",
+		type: "keybind",
+		default: "s",
+		hideOnMobile: true,
+	},
+	{
+		id: "keybindVibrato",
+		name: "Vibrato",
+		type: "keybind",
+		default: " ",
+		hideOnMobile: true,
+	},
 ];
 
 export const keybindIds: readonly KeybindId[] = settingFields

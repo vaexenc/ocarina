@@ -7,11 +7,12 @@ export default function Keybind({
 	keyboardKey: string;
 	awaitingInput: boolean;
 }) {
+	const displayKey = keyboardKey === " " ? "Space" : keyboardKey;
 	const label = awaitingInput
 		? "..."
-		: keyboardKey.length > 10
-			? keyboardKey.slice(0, 10 - 1) + "..."
-			: keyboardKey;
+		: displayKey.length > 10
+			? displayKey.slice(0, 10 - 1) + "..."
+			: displayKey;
 
 	return (
 		<div
