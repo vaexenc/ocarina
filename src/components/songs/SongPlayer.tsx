@@ -152,7 +152,6 @@ export default function SongPlayer({
 		gainNode.connect(audioSystem.current.gain);
 		gainNode.gain.value = 1;
 		ocarinaConvolverNode.current.connect(gainNode);
-		// eslint-disable-next-line
 	}, [isReady]);
 
 	useEffect(() => {

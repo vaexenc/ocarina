@@ -122,7 +122,6 @@ export default function LoadingScreen({
 					setFailedCount((count) => count + 1);
 				});
 		});
-		// eslint-disable-next-line
 	}, []);
 
 	const stoneSymbolData = useMemo(
