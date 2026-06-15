@@ -50,7 +50,6 @@ export default function Background({
 					: ({
 							"--offset-x": springs.x.to((value) => value.toString()),
 							"--offset-y": springs.y.to((value) => value.toString()),
-							// eslint-disable-next-line no-mixed-spaces-and-tabs
 						} as React.CSSProperties)
 			}
 		>

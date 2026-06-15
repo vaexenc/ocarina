@@ -168,7 +168,7 @@ export default function LoadingScreen({
 					onClick={async () => {
 						if (progressModified >= 100) {
 							const source = audioSystem.current.context.createBufferSource();
-							source.buffer = audioBuffers.current["confirm"];
+							source.buffer = audioBuffers.current.confirm;
 							source.connect(audioSystem.current.gain);
 							source.start();
 

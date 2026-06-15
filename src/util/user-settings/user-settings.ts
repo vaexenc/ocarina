@@ -30,7 +30,7 @@ export function createUpdatedUserSettings(
 		userSettingToUpdate.value = serializedUserSetting[1];
 	});
 
-	return newUserSettings as UserSettings;
+	return newUserSettings;
 }
 
 export function deleteUserSettings() {

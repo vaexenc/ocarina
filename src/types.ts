@@ -12,13 +12,13 @@ export type Song = {
 	readonly notes: readonly Note[];
 	readonly omitThe?: boolean;
 };
-export type Songs = {readonly [key: string]: Readonly<Song>};
+export type Songs = Readonly<Record<string, Readonly<Song>>>;
 
 export type AudioSystem = {
 	context: AudioContext;
 	gain: GainNode;
 };
-export type AudioBuffers = {[id: string]: AudioBuffer};
+export type AudioBuffers = Record<string, AudioBuffer>;
 
 type SliderUserSetting = {readonly type: "slider"; value: number};
 type ToggleUserSetting = {readonly type: "toggle"; value: boolean};
@@ -29,4 +29,4 @@ export type UserSetting = {
 	readonly hideOnMobile?: boolean;
 } & (SliderUserSetting | ToggleUserSetting | KeybindUserSetting);
 export type UserSettings = UserSetting[];
-export type SerializedUserSettings = {[key in UserSetting["id"]]: UserSetting["value"]};
+export type SerializedUserSettings = Record<UserSetting["id"], UserSetting["value"]>;

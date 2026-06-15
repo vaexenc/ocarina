@@ -22,7 +22,7 @@ const songEndDelay = 500;
 const ocarinaFadeDuration = 0.3;
 const songStartOcarinaFadeoutDelay = -100;
 
-const keybindsToNotes: {[key: string]: NoteName} = {
+const keybindsToNotes: Record<string, NoteName> = {
 	"keybindA": "a",
 	"keybindCUp": "u",
 	"keybindCDown": "d",
@@ -30,7 +30,7 @@ const keybindsToNotes: {[key: string]: NoteName} = {
 	"keybindCRight": "r",
 };
 
-const notesToDetune: {[key in NoteName]: number} = {
+const notesToDetune: Record<NoteName, number> = {
 	// ocarina.ogg: g#
 	"a": -600, // d
 	"d": -300, // f
@@ -111,7 +111,7 @@ export default function SongPlayer({
 			}
 
 			const source = audioSystem.current.context.createBufferSource();
-			source.buffer = audioBuffers.current["ocarina"];
+			source.buffer = audioBuffers.current.ocarina;
 			const gainNode = audioSystem.current.context.createGain();
 			gainNode.gain.value = 0.3;
 			gainNode.connect(audioSystem.current.gain);
