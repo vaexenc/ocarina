@@ -8,7 +8,7 @@ import IconZora from "/src/images/icons/zora.svg?react";
 import IconTriforce from "/src/images/icons/triforce.svg?react";
 import {songs} from "/src/song-data";
 import {AudioBuffers, AudioSystem, UserSettings} from "/src/types";
-import {clamp, fetchSoundWithRetry, map} from "/src/util/util";
+import {clamp, fetchAsset, map} from "/src/util/util";
 
 const soundsToFetch = [
 	...Object.entries(songs).map((song) => {
@@ -64,6 +64,7 @@ export default function LoadingScreen({
 	showControls: boolean;
 }) {
 	const [progress, setProgress] = useState(0);
+	const [failedCount, setFailedCount] = useState(0);
 	const [visible, setVisible] = useState(true);
 	const [isFadingOut, setIsFadingOut] = useState(false);
 	const hasMainEffectRun = useRef(false); // to try to deal with StrictMode
@@ -94,12 +95,16 @@ export default function LoadingScreen({
 		}
 
 		soundsToFetch.forEach((sound) => {
-			fetchSoundWithRetry(sound.url, (arrayBuffer) => {
-				audioSystem.current.context.decodeAudioData(arrayBuffer).then((audioBuffer) => {
+			fetchAsset(sound.url)
+				.then((arrayBuffer) => audioSystem.current.context.decodeAudioData(arrayBuffer))
+				.then((audioBuffer) => {
 					audioBuffers.current[sound.id] = audioBuffer;
 					updateProgress();
+				})
+				.catch((error) => {
+					console.error(`Failed to load sound "${sound.id}" (${sound.url})`, error);
+					setFailedCount((count) => count + 1);
 				});
-			});
 		});
 		// eslint-disable-next-line
 	}, []);
@@ -200,6 +205,11 @@ export default function LoadingScreen({
 									} as React.CSSProperties
 								}
 							></div>
+						</div>
+						<div className={clsx("load-error", {"hidden": failedCount <= 0})}>
+							{`Failed to load ${failedCount} file${failedCount === 1 ? "" : "s"}.`}
+							<br />
+							Please refresh the page to try again.
 						</div>
 						<IconTriforce
 							className={clsx("triforce", {"hidden": progressModified < 100})}

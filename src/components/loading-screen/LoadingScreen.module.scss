@@ -159,6 +159,26 @@
 				}
 			}
 
+			.load-error {
+				position: absolute;
+				width: 100%;
+				top: calc(100% + 30px);
+				font-size: 16px;
+				line-height: 1.5;
+				color: #f22700;
+				text-align: center;
+				letter-spacing: 0.025em;
+				opacity: 1;
+				transition: opacity 0.5s;
+				filter: drop-shadow(0 0 0.15em rgba(242, 39, 0, 0.8))
+					drop-shadow(0 0 0.3em rgba(242, 39, 0, 0.5));
+
+				&.hidden {
+					opacity: 0;
+					pointer-events: none;
+				}
+			}
+
 			.continue {
 				position: absolute;
 				width: 100%;

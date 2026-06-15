@@ -1,10 +1,10 @@
 import clsx from "clsx";
 import style from "./MobileControls.module.scss";
-import A from "/src/images/buttons/a.svg?react";
-import CUp from "/src/images/buttons/c-up.svg?react";
-import CDown from "/src/images/buttons/c-down.svg?react";
-import CLeft from "/src/images/buttons/c-left.svg?react";
-import CRight from "/src/images/buttons/c-right.svg?react";
+import A from "/src/images/buttons/a-simple.svg?react";
+import CUp from "/src/images/buttons/c-up-simple.svg?react";
+import CDown from "/src/images/buttons/c-down-simple.svg?react";
+import CLeft from "/src/images/buttons/c-left-simple.svg?react";
+import CRight from "/src/images/buttons/c-right-simple.svg?react";
 import {NoteName, SvgComponent} from "/src/types";
 
 function Button({
