@@ -1,8 +1,8 @@
 import A from "/src/images/buttons/a.svg?react";
-import CUp from "/src/images/buttons/c-up.svg?react";
 import CDown from "/src/images/buttons/c-down.svg?react";
 import CLeft from "/src/images/buttons/c-left.svg?react";
 import CRight from "/src/images/buttons/c-right.svg?react";
+import CUp from "/src/images/buttons/c-up.svg?react";
 import {UserSettings} from "/src/types";
 
 const defaultUserSettings: UserSettings = [

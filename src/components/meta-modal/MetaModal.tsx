@@ -3,9 +3,9 @@ import {useCallback, useEffect, useRef, useState} from "react";
 import Keybind from "./keybind/Keybind";
 import RangeInput from "./range-input/RangeInput";
 import Toggle from "./toggle/Toggle";
+import IconDiscord from "/src/images/icons/discord.svg?react";
 import IconGithub from "/src/images/icons/github.svg?react";
 import IconX from "/src/images/icons/x.svg?react";
-import IconDiscord from "/src/images/icons/discord.svg?react";
 import {UserSetting, UserSettings} from "/src/types";
 import {assertNever} from "/src/util/util";
 

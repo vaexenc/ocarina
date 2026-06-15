@@ -169,4 +169,4 @@ const songSlots = {
 	},
 };
 
-export {songSlots, songs};
+export {songs, songSlots};

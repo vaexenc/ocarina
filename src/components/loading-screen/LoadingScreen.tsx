@@ -1,10 +1,10 @@
 import clsx from "clsx";
 import Color from "color";
 import {useEffect, useMemo, useRef, useState} from "react";
-import IconKokiri from "/src/images/icons/kokiri.svg?react";
 import IconGoron from "/src/images/icons/goron.svg?react";
-import IconZora from "/src/images/icons/zora.svg?react";
+import IconKokiri from "/src/images/icons/kokiri.svg?react";
 import IconTriforce from "/src/images/icons/triforce.svg?react";
+import IconZora from "/src/images/icons/zora.svg?react";
 import {songs} from "/src/song-data";
 import {AudioBuffers, AudioSystem, UserSettings} from "/src/types";
 import {clamp, fetchAsset, map} from "/src/util/util";
