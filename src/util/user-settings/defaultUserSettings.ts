@@ -1,3 +1,8 @@
+import A from "/src/images/buttons/a.svg?react";
+import CUp from "/src/images/buttons/c-up.svg?react";
+import CDown from "/src/images/buttons/c-down.svg?react";
+import CLeft from "/src/images/buttons/c-left.svg?react";
+import CRight from "/src/images/buttons/c-right.svg?react";
 import {UserSettings} from "/src/types";
 
 const defaultUserSettings: UserSettings = [
@@ -13,7 +18,7 @@ const defaultUserSettings: UserSettings = [
 		id: "keybindA",
 		name: "A",
 		type: "keybind",
-		image: "images/buttons/a.svg",
+		image: A,
 		value: "a",
 		hideOnMobile: true,
 	},
@@ -21,7 +26,7 @@ const defaultUserSettings: UserSettings = [
 		id: "keybindCUp",
 		name: "C-Up",
 		type: "keybind",
-		image: "images/buttons/c-up.svg",
+		image: CUp,
 		value: "ArrowUp",
 		hideOnMobile: true,
 	},
@@ -29,7 +34,7 @@ const defaultUserSettings: UserSettings = [
 		id: "keybindCDown",
 		name: "C-Down",
 		type: "keybind",
-		image: "images/buttons/c-down.svg",
+		image: CDown,
 		value: "ArrowDown",
 		hideOnMobile: true,
 	},
@@ -37,7 +42,7 @@ const defaultUserSettings: UserSettings = [
 		id: "keybindCLeft",
 		name: "C-Left",
 		type: "keybind",
-		image: "images/buttons/c-left.svg",
+		image: CLeft,
 		value: "ArrowLeft",
 		hideOnMobile: true,
 	},
@@ -45,7 +50,7 @@ const defaultUserSettings: UserSettings = [
 		id: "keybindCRight",
 		name: "C-Right",
 		type: "keybind",
-		image: "images/buttons/c-right.svg",
+		image: CRight,
 		value: "ArrowRight",
 		hideOnMobile: true,
 	},

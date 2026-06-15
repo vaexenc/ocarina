@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import style from "./Notebox.module.scss";
+import Clef from "/src/images/clef.svg?react";
 import {noteMap} from "/src/song-data";
 import {Note} from "/src/types";
 
@@ -30,9 +31,11 @@ export default function NoteBox({
 					<div className="line" />
 					<div className="line" />
 				</div>
-				<img className="clef" src="images/clef.svg" />
+				<Clef className="clef" />
 				<div className="notes">
 					{notes.map((note, i) => {
+						const {class: noteClass, Image} =
+							noteMap[typeof note === "object" ? note.note : note];
 						return (
 							<div
 								className={clsx("note-container", {
@@ -40,13 +43,7 @@ export default function NoteBox({
 								})}
 								key={typeof note === "object" ? note.id : i}
 							>
-								<img
-									className={clsx(
-										"note",
-										noteMap[typeof note === "object" ? note.note : note].class
-									)}
-									src={noteMap[typeof note === "object" ? note.note : note].image}
-								/>
+								<Image className={clsx("note", noteClass)} />
 							</div>
 						);
 					})}

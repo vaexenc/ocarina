@@ -1,22 +1,26 @@
 import clsx from "clsx";
 import style from "./MobileControls.module.scss";
-import {NoteName} from "/src/types";
+import A from "/src/images/buttons/a.svg?react";
+import CUp from "/src/images/buttons/c-up.svg?react";
+import CDown from "/src/images/buttons/c-down.svg?react";
+import CLeft from "/src/images/buttons/c-left.svg?react";
+import CRight from "/src/images/buttons/c-right.svg?react";
+import {NoteName, SvgComponent} from "/src/types";
 
 function Button({
 	className,
-	src,
+	Image,
 	onPress,
 	onRelease,
 }: {
 	className?: string;
-	src: string;
+	Image: SvgComponent;
 	onPress: () => void;
 	onRelease: () => void;
 }) {
 	return (
-		<img
+		<Image
 			className={clsx("button", className)}
-			src={src}
 			onTouchStart={(e) => {
 				e.preventDefault();
 				onPress();
@@ -32,7 +36,6 @@ function Button({
 				e.stopPropagation();
 				return false;
 			}}
-			draggable="false"
 		/>
 	);
 }
@@ -49,7 +52,7 @@ export default function MobileControls({
 			<div className="a-container">
 				<Button
 					className="a"
-					src={"images/buttons/a-simple.svg"}
+					Image={A}
 					onPress={() => inputPress("a")}
 					onRelease={() => inputRelease("a")}
 				/>
@@ -57,7 +60,7 @@ export default function MobileControls({
 			<div className="c-container">
 				<Button
 					className="c-up"
-					src={"images/buttons/c-up-simple.svg"}
+					Image={CUp}
 					onPress={() => inputPress("u")}
 					onRelease={() => inputRelease("u")}
 				/>
@@ -65,13 +68,13 @@ export default function MobileControls({
 				<div className="c-middle-buttons">
 					<Button
 						className="c-left"
-						src={"images/buttons/c-left-simple.svg"}
+						Image={CLeft}
 						onPress={() => inputPress("l")}
 						onRelease={() => inputRelease("l")}
 					/>
 					<Button
 						className="c-right"
-						src={"images/buttons/c-right-simple.svg"}
+						Image={CRight}
 						onPress={() => inputPress("r")}
 						onRelease={() => inputRelease("r")}
 					/>
@@ -79,7 +82,7 @@ export default function MobileControls({
 
 				<Button
 					className="c-down"
-					src={"images/buttons/c-down-simple.svg"}
+					Image={CDown}
 					onPress={() => inputPress("d")}
 					onRelease={() => inputRelease("d")}
 				/>

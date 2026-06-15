@@ -4,9 +4,9 @@ import style from "./MetaModal.module.scss";
 import Keybind from "./keybind/Keybind";
 import RangeInput from "./range-input/RangeInput";
 import Toggle from "./toggle/Toggle";
-import IconGithub from "/src/components/icons/IconGithub";
-import IconX from "/src/components/icons/IconX";
-import IconDiscord from "/src/components/icons/IconDiscord";
+import IconGithub from "/src/images/icons/github.svg?react";
+import IconX from "/src/images/icons/x.svg?react";
+import IconDiscord from "/src/images/icons/discord.svg?react";
 import {UserSetting, UserSettings} from "/src/types";
 
 function ModalTrigger({onClick}: {onClick: React.MouseEventHandler<HTMLButtonElement>}) {
@@ -133,10 +133,7 @@ function Modal({
 									>
 										<div className="setting-label">
 											<div className="input-label">
-												<img
-													className="input-image"
-													src={userSetting.image}
-												/>
+												<userSetting.image className="input-image" />
 												{userSetting.name}
 											</div>
 										</div>

@@ -1,4 +1,9 @@
-import {Songs} from "/src/types";
+import CUp from "/src/images/buttons/c-up.svg?react";
+import CDown from "/src/images/buttons/c-down.svg?react";
+import CLeft from "/src/images/buttons/c-left.svg?react";
+import CRight from "/src/images/buttons/c-right.svg?react";
+import A from "/src/images/buttons/a.svg?react";
+import {NoteName, SvgComponent, Songs} from "/src/types";
 
 const songs: Songs = {
 	"zeldas-lullaby": {
@@ -169,12 +174,12 @@ const songSlots = {
 	},
 };
 
-const noteMap = {
-	u: {class: "note-up", image: "images/buttons/c-up.svg"},
-	d: {class: "note-down", image: "images/buttons/c-down.svg"},
-	l: {class: "note-left", image: "images/buttons/c-left.svg"},
-	r: {class: "note-right", image: "images/buttons/c-right.svg"},
-	a: {class: "note-a", image: "images/buttons/a.svg"},
+const noteMap: {[key in NoteName]: {class: string; Image: SvgComponent}} = {
+	u: {class: "note-up", Image: CUp},
+	d: {class: "note-down", Image: CDown},
+	l: {class: "note-left", Image: CLeft},
+	r: {class: "note-right", Image: CRight},
+	a: {class: "note-a", Image: A},
 };
 
 export {noteMap, songSlots, songs};

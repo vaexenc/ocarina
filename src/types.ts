@@ -1,3 +1,7 @@
+import type {FunctionComponent, SVGProps} from "react";
+
+export type SvgComponent = FunctionComponent<SVGProps<SVGSVGElement> & {title?: string}>;
+
 export type NoteName = "u" | "d" | "l" | "r" | "a";
 export type NoteObject = {note: NoteName; id: number | string; isFlashing?: true};
 export type Note = NoteName | NoteObject;
@@ -18,7 +22,7 @@ export type AudioBuffers = {[id: string]: AudioBuffer};
 
 type SliderUserSetting = {readonly type: "slider"; value: number};
 type ToggleUserSetting = {readonly type: "toggle"; value: boolean};
-type KeybindUserSetting = {readonly type: "keybind"; readonly image: string; value: string};
+type KeybindUserSetting = {readonly type: "keybind"; readonly image: SvgComponent; value: string};
 export type UserSetting = {
 	readonly id: string;
 	readonly name: string;
