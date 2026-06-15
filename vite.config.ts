@@ -29,6 +29,9 @@ export default defineConfig({
 		}),
 		ViteMinifyPlugin(),
 	],
+	server: {
+		host: true,
+	},
 	build: {
 		assetsDir: "./",
 	},
