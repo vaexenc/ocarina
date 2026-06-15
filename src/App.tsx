@@ -3,75 +3,55 @@ import Background from "./components/background/Background";
 import LoadingScreen from "./components/loading-screen/LoadingScreen";
 import MetaModal from "./components/meta-modal/MetaModal";
 import SongPlayer from "./components/songs/SongPlayer";
-import {AudioBuffers, AudioSystem, Song, UserSettings} from "./types";
-import defaultUserSettings from "./util/user-settings/default-user-settings";
-import {
-	createUpdatedUserSettings,
-	deleteUserSettings,
-	loadLocalUserSettings,
-	saveUserSettings,
-} from "./util/user-settings/user-settings";
+import {AudioBuffers, AudioSystem, Song} from "./types";
+import {deleteSettings, loadSettings, saveSettings} from "./util/user-settings/user-settings";
+import {createAudioSystem, playSound} from "./util/audio";
 import {checkIfMobileDevice} from "./util/util";
 
 if (new URL(window.location.href).searchParams.has("reset")) {
-	deleteUserSettings();
+	deleteSettings();
 	localStorage.removeItem("ocarina.hasPlayedBefore");
 
 	const urlWithoutParameters = window.location.origin + window.location.pathname;
 	window.history.replaceState({}, document.title, urlWithoutParameters);
 }
 
-const localUserSettings = loadLocalUserSettings();
-const userSettingsInitial = localUserSettings
-	? createUpdatedUserSettings(defaultUserSettings, localUserSettings)
-	: defaultUserSettings;
-
+const settingsInitial = loadSettings();
 const hasPlayedBefore = !!localStorage.getItem("ocarina.hasPlayedBefore");
 
 function App() {
-	const [userSettings, setUserSettings] = useState(userSettingsInitial);
+	const [settings, setSettings] = useState(settingsInitial);
 	const [isLoadingScreenOpen, setIsLoadingScreenOpen] = useState(true);
 	const [isMetaModalOpen, setIsMetaModalOpen] = useState(false);
-	const [isMobile, setisMobile] = useState(checkIfMobileDevice());
+	const [isMobile, setIsMobile] = useState(checkIfMobileDevice());
 	const [currentSongId, setCurrentSongId] = useState<string | null>(null);
-	// todo: make this code cleaner? (useEffect, check for null)
-	const isAudioSystemInitialized = useRef(false);
-	const audioSystem = useRef<AudioSystem>(
-		(() => {
-			if (isAudioSystemInitialized.current) return {} as AudioSystem;
 
-			const audioContext = new AudioContext();
-			const gainNode = audioContext.createGain();
-			gainNode.connect(audioContext.destination);
-
-			isAudioSystemInitialized.current = true;
-
-			return {
-				context: audioContext,
-				gain: gainNode,
-			};
-		})()
-	);
+	// Lazily create the single AudioContext on first render (and never on re-renders).
+	const audioSystemRef = useRef<AudioSystem | null>(null);
+	audioSystemRef.current ??= createAudioSystem();
+	const audioSystem = audioSystemRef as React.RefObject<AudioSystem>;
 	const audioBuffers = useRef<AudioBuffers>({});
 
-	const volumeSetting = userSettings.find((userSetting) => userSetting.id === "volume");
-	if (volumeSetting) {
-		audioSystem.current.gain.gain.value = volumeSetting.value as number;
-	}
+	// Persist settings, debounced so dragging the volume slider doesn't hammer localStorage.
+	useEffect(() => {
+		const timer = setTimeout(() => saveSettings(settings), 200);
+		return () => clearTimeout(timer);
+	}, [settings]);
 
-	const onSongCorrect = useCallback((songId: string, songData: Song) => {
-		const source = audioSystem.current.context.createBufferSource();
-		source.buffer = audioBuffers.current["song-correct"];
-		const gainNode = audioSystem.current.context.createGain();
-		gainNode.connect(audioSystem.current.gain);
-		gainNode.gain.value = 0.5;
-		source.connect(gainNode);
-		source.start();
-		if (songData.notes.find((note) => note === "a")) {
-			localStorage.setItem("ocarina.hasPlayedBefore", "1");
-		}
-		setCurrentSongId(songId);
-	}, []);
+	useEffect(() => {
+		audioSystem.current.gain.gain.value = settings.volume;
+	}, [settings.volume, audioSystem]);
+
+	const onSongCorrect = useCallback(
+		(songId: string, songData: Song) => {
+			playSound(audioSystem.current, audioBuffers.current["song-correct"], {gain: 0.5});
+			if (songData.notes.includes("a")) {
+				localStorage.setItem("ocarina.hasPlayedBefore", "1");
+			}
+			setCurrentSongId(songId);
+		},
+		[audioSystem]
+	);
 
 	const onSongEnd = useCallback(() => {
 		setCurrentSongId(null);
@@ -79,7 +59,7 @@ function App() {
 
 	useEffect(() => {
 		const pointerQuery = window.matchMedia("(pointer: coarse)");
-		const onPointerChange = (e: MediaQueryListEvent) => setisMobile(e.matches);
+		const onPointerChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
 
 		pointerQuery.addEventListener("change", onPointerChange);
 
@@ -91,17 +71,12 @@ function App() {
 	return (
 		<>
 			<Background
-				isParallaxOn={
-					!isMobile &&
-					Boolean(
-						userSettings.find((userSetting) => userSetting.id === "bgMovement")?.value
-					)
-				}
+				isParallaxOn={!isMobile && settings.bgMovement}
 				doesParallaxUpdate={true /*!isMetaModalOpen*/}
 			/>
 			<SongPlayer
 				isReady={!isLoadingScreenOpen}
-				userSettings={userSettings}
+				settings={settings}
 				isMobile={isMobile}
 				isInputEnabled={!isLoadingScreenOpen && !isMetaModalOpen}
 				onSongCorrect={onSongCorrect}
@@ -114,31 +89,22 @@ function App() {
 				isOpen={isMetaModalOpen}
 				onOpen={() => {
 					setIsMetaModalOpen(true);
-
-					if (currentSongId) return;
-					const source = audioSystem.current.context.createBufferSource();
-					source.buffer = audioBuffers.current["menu-open"];
-					source.connect(audioSystem.current.gain);
-					source.start();
+					if (!currentSongId) {
+						playSound(audioSystem.current, audioBuffers.current["menu-open"]);
+					}
 				}}
 				onClose={() => {
 					setIsMetaModalOpen(false);
-
-					if (currentSongId) return;
-					const source = audioSystem.current.context.createBufferSource();
-					source.buffer = audioBuffers.current["menu-close"];
-					source.connect(audioSystem.current.gain);
-					source.start();
+					if (!currentSongId) {
+						playSound(audioSystem.current, audioBuffers.current["menu-close"]);
+					}
 				}}
-				userSettings={userSettings}
-				setUserSettings={setUserSettings}
-				saveUserSettings={(userSettings: UserSettings) => {
-					saveUserSettings(userSettings);
-				}}
+				settings={settings}
+				setSettings={setSettings}
 				isMobile={isMobile}
 			/>
 			<LoadingScreen
-				userSettings={userSettings}
+				settings={settings}
 				isMobile={isMobile}
 				audioSystem={audioSystem}
 				audioBuffers={audioBuffers}

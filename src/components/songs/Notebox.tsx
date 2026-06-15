@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import Clef from "/src/images/clef.svg?react";
 import {noteMap} from "/src/note-map";
-import {Note} from "/src/types";
+import {NoteObject} from "/src/types";
 
 const rootByVariant = {
 	reference:
@@ -24,7 +24,7 @@ export default function NoteBox({
 	className?: string;
 	variant?: "reference" | "player";
 	text: React.JSX.Element;
-	notes: Note[];
+	notes: NoteObject[];
 	isHighlighted?: boolean;
 }) {
 	return (
@@ -54,18 +54,15 @@ export default function NoteBox({
 				</div>
 				<Clef className="absolute top-0 left-[calc(var(--height)*0.076923)] h-[138%] w-auto pointer-events-none [transform:translate(0%,-14.1%)]" />
 				<div className="flex h-full pl-[calc(var(--height)*0.4326923)]">
-					{notes.map((note, i) => {
-						const {class: noteClass, Image} =
-							noteMap[typeof note === "object" ? note.note : note];
+					{notes.map((note) => {
+						const {class: noteClass, Image} = noteMap[note.note];
 						return (
 							<div
 								className={clsx(
 									"relative h-full w-[calc(var(--height)*0.375)] pointer-events-none",
-									typeof note === "object" &&
-										note.isFlashing &&
-										"animate-flashing"
+									note.isFlashing && "animate-flashing"
 								)}
-								key={typeof note === "object" ? note.id : i}
+								key={note.id}
 							>
 								<Image
 									className={clsx(

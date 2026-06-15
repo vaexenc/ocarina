@@ -3,31 +3,25 @@ import CDown from "/src/images/buttons/c-down.svg?react";
 import CLeft from "/src/images/buttons/c-left.svg?react";
 import CRight from "/src/images/buttons/c-right.svg?react";
 import CUp from "/src/images/buttons/c-up.svg?react";
-import {UserSettings} from "/src/types";
+import {KeybindId, SettingDef, SettingValues} from "/src/types";
 
-const defaultUserSettings: UserSettings = [
-	{id: "volume", name: "Volume", type: "slider", value: 0.25},
+// The single source of truth for settings: their order, labels, controls, and defaults.
+export const settingDefs: readonly SettingDef[] = [
+	{id: "volume", name: "Volume", type: "slider", default: 0.25},
 	{
 		id: "bgMovement",
 		name: "Background Movement",
 		type: "toggle",
-		value: true,
+		default: true,
 		hideOnMobile: true,
 	},
-	{
-		id: "keybindA",
-		name: "A",
-		type: "keybind",
-		image: A,
-		value: "a",
-		hideOnMobile: true,
-	},
+	{id: "keybindA", name: "A", type: "keybind", image: A, default: "a", hideOnMobile: true},
 	{
 		id: "keybindCUp",
 		name: "C-Up",
 		type: "keybind",
 		image: CUp,
-		value: "ArrowUp",
+		default: "ArrowUp",
 		hideOnMobile: true,
 	},
 	{
@@ -35,7 +29,7 @@ const defaultUserSettings: UserSettings = [
 		name: "C-Down",
 		type: "keybind",
 		image: CDown,
-		value: "ArrowDown",
+		default: "ArrowDown",
 		hideOnMobile: true,
 	},
 	{
@@ -43,7 +37,7 @@ const defaultUserSettings: UserSettings = [
 		name: "C-Left",
 		type: "keybind",
 		image: CLeft,
-		value: "ArrowLeft",
+		default: "ArrowLeft",
 		hideOnMobile: true,
 	},
 	{
@@ -51,17 +45,15 @@ const defaultUserSettings: UserSettings = [
 		name: "C-Right",
 		type: "keybind",
 		image: CRight,
-		value: "ArrowRight",
+		default: "ArrowRight",
 		hideOnMobile: true,
 	},
 ];
 
-// check for duplicate ids
+export const keybindIds: readonly KeybindId[] = settingDefs
+	.filter((def): def is Extract<SettingDef, {type: "keybind"}> => def.type === "keybind")
+	.map((def) => def.id);
 
-const defaultUserSettingIds = new Set();
-defaultUserSettings.forEach((defaultUserSetting) => {
-	if (defaultUserSettingIds.has(defaultUserSetting.id)) throw Error("duplicate setting id");
-	defaultUserSettingIds.add(defaultUserSetting.id);
-});
-
-export default defaultUserSettings;
+export const defaultSettingValues = Object.fromEntries(
+	settingDefs.map((def) => [def.id, def.default])
+) as SettingValues;

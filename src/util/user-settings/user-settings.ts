@@ -1,38 +1,19 @@
-import {SerializedUserSettings, UserSettings} from "/src/types";
+import {SettingValues} from "/src/types";
+import {defaultSettingValues} from "./default-user-settings";
 
-export function saveUserSettings(userSettings: UserSettings) {
-	const serializedUserSettings: SerializedUserSettings = {};
+const STORAGE_KEY = "ocarina.userSettings";
 
-	userSettings.forEach((userSetting) => {
-		serializedUserSettings[userSetting.id] = userSetting.value;
-	});
-
-	localStorage.setItem("ocarina.userSettings", JSON.stringify(serializedUserSettings));
+export function saveSettings(values: SettingValues) {
+	localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
 }
 
-export function loadLocalUserSettings() {
-	const localUserSettings = localStorage.getItem("ocarina.userSettings");
-	if (!localUserSettings) return null;
-	return JSON.parse(localUserSettings) as SerializedUserSettings;
+/** Returns the persisted settings merged over the defaults, or the defaults if none are stored. */
+export function loadSettings(): SettingValues {
+	const raw = localStorage.getItem(STORAGE_KEY);
+	if (!raw) return defaultSettingValues;
+	return {...defaultSettingValues, ...(JSON.parse(raw) as Partial<SettingValues>)};
 }
 
-export function createUpdatedUserSettings(
-	userSettings: UserSettings,
-	serializedUserSettings: SerializedUserSettings
-) {
-	const newUserSettings = [...userSettings];
-
-	Object.entries(serializedUserSettings).forEach((serializedUserSetting) => {
-		const userSettingToUpdate = newUserSettings.find(
-			(userSetting) => userSetting.id === serializedUserSetting[0]
-		);
-		if (!userSettingToUpdate) throw Error("user setting not found");
-		userSettingToUpdate.value = serializedUserSetting[1];
-	});
-
-	return newUserSettings;
-}
-
-export function deleteUserSettings() {
-	localStorage.removeItem("ocarina.userSettings");
+export function deleteSettings() {
+	localStorage.removeItem(STORAGE_KEY);
 }

@@ -20,13 +20,38 @@ export type AudioSystem = {
 };
 export type AudioBuffers = Record<string, AudioBuffer>;
 
-type SliderUserSetting = {readonly type: "slider"; value: number};
-type ToggleUserSetting = {readonly type: "toggle"; value: boolean};
-type KeybindUserSetting = {readonly type: "keybind"; readonly image: SvgComponent; value: string};
-export type UserSetting = {
-	readonly id: string;
+// The mutable settings the user can change, as a typed map. Reading a value is a
+// direct, typed property access (`settings.volume` is a `number`) — no lookups,
+// no casts. This is also exactly the shape we persist to localStorage.
+export type SettingValues = {
+	volume: number;
+	bgMovement: boolean;
+	keybindA: string;
+	keybindCUp: string;
+	keybindCDown: string;
+	keybindCLeft: string;
+	keybindCRight: string;
+};
+export type SettingId = keyof SettingValues;
+export type KeybindId =
+	| "keybindA"
+	| "keybindCUp"
+	| "keybindCDown"
+	| "keybindCLeft"
+	| "keybindCRight";
+
+// The static metadata describing how each setting is rendered, in display order.
+// Discriminating on `type` narrows `id`, which in turn types the value lookup, so
+// the modal can render and edit each control without a single cast.
+type SliderDef = {readonly type: "slider"; readonly id: "volume"; readonly default: number};
+type ToggleDef = {readonly type: "toggle"; readonly id: "bgMovement"; readonly default: boolean};
+type KeybindDef = {
+	readonly type: "keybind";
+	readonly id: KeybindId;
+	readonly image: SvgComponent;
+	readonly default: string;
+};
+export type SettingDef = {
 	readonly name: string;
 	readonly hideOnMobile?: boolean;
-} & (SliderUserSetting | ToggleUserSetting | KeybindUserSetting);
-export type UserSettings = UserSetting[];
-export type SerializedUserSettings = Record<UserSetting["id"], UserSetting["value"]>;
+} & (SliderDef | ToggleDef | KeybindDef);

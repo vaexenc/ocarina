@@ -1,5 +1,3 @@
-import {useRef} from "react";
-
 export default function RangeInput({
 	className,
 	min,
@@ -7,7 +5,6 @@ export default function RangeInput({
 	step,
 	value,
 	onChange,
-	onChangeDebounce,
 }: {
 	className: string;
 	min: number;
@@ -15,10 +12,7 @@ export default function RangeInput({
 	step: number;
 	value: number;
 	onChange: React.ChangeEventHandler<HTMLInputElement>;
-	onChangeDebounce: () => void;
 }) {
-	const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
 	return (
 		<input
 			type="range"
@@ -28,15 +22,7 @@ export default function RangeInput({
 			step={step}
 			defaultValue={value}
 			style={{"--value": `${value * 100}%`} as React.CSSProperties}
-			onChange={(e) => {
-				onChange(e);
-
-				if (timeoutRef.current !== undefined) {
-					clearTimeout(timeoutRef.current);
-				}
-
-				timeoutRef.current = setTimeout(onChangeDebounce, 200);
-			}}
+			onChange={onChange}
 		/>
 	);
 }

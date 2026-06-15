@@ -88,7 +88,10 @@ export default function SongReference({currentSongId}: {currentSongId: string | 
 										className="w-full max-w-[410px] min-[650px]:w-[calc(50%-5px)] min-[1400px]:w-[calc(33%-5px)]"
 										variant="reference"
 										text={<span style={{color: song.color}}>{song.name}</span>}
-										notes={[...song.notes]}
+										notes={song.notes.map((note, i) => ({
+											note: typeof note === "object" ? note.note : note,
+											id: i,
+										}))}
 										isHighlighted={songId === currentSongId}
 									/>
 								);

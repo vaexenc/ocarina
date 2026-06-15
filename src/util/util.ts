@@ -127,15 +127,3 @@ export async function fetchAsset<T = ArrayBuffer>(
 	// Unreachable: the loop either returns or throws on the last attempt.
 	throw new FetchError(`Failed to fetch ${url}`);
 }
-
-export function fadeOutSource(
-	audioContext: AudioContext,
-	source: AudioBufferSourceNode,
-	gainNode: GainNode,
-	fadeDuration: number
-) {
-	const currentTime = audioContext.currentTime;
-	gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
-	gainNode.gain.linearRampToValueAtTime(0, currentTime + fadeDuration);
-	source.stop(currentTime + fadeDuration);
-}

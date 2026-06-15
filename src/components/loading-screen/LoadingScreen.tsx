@@ -1,13 +1,14 @@
 import clsx from "clsx";
 import Color from "color";
-import {useEffect, useMemo, useRef, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import IconGoron from "/src/images/icons/goron.svg?react";
 import IconKokiri from "/src/images/icons/kokiri.svg?react";
 import IconTriforce from "/src/images/icons/triforce.svg?react";
 import IconZora from "/src/images/icons/zora.svg?react";
 import {songs} from "/src/song-data";
-import {AudioBuffers, AudioSystem, UserSettings} from "/src/types";
+import {AudioBuffers, AudioSystem, SettingValues} from "/src/types";
 import {clamp, fetchAsset, map} from "/src/util/util";
+import {defaultSettingValues, keybindIds} from "/src/util/user-settings/default-user-settings";
 
 const soundsToFetch = [
 	...Object.entries(songs).map((song) => {
@@ -65,14 +66,14 @@ function StoneSymbol({
 }
 
 export default function LoadingScreen({
-	userSettings,
+	settings,
 	isMobile,
 	audioSystem,
 	audioBuffers,
 	onClose,
 	showControls,
 }: {
-	userSettings: UserSettings;
+	settings: SettingValues;
 	isMobile: boolean;
 	audioSystem: React.RefObject<AudioSystem>;
 	audioBuffers: React.RefObject<AudioBuffers>;
@@ -83,7 +84,6 @@ export default function LoadingScreen({
 	const [failedCount, setFailedCount] = useState(0);
 	const [visible, setVisible] = useState(true);
 	const [isFadingOut, setIsFadingOut] = useState(false);
-	const hasMainEffectRun = useRef(false); // to try to deal with StrictMode
 
 	function updateProgress() {
 		setProgress((progress) => {
@@ -99,29 +99,33 @@ export default function LoadingScreen({
 	}
 
 	useEffect(() => {
-		if (hasMainEffectRun.current) return;
-		hasMainEffectRun.current = true;
+		const controller = new AbortController();
+		const onLoad = () => updateProgress();
 
 		if (document.readyState === "complete") {
 			updateProgress();
 		} else {
-			window.addEventListener("load", function () {
-				updateProgress();
-			});
+			window.addEventListener("load", onLoad, {once: true});
 		}
 
 		soundsToFetch.forEach((sound) => {
-			fetchAsset(sound.url)
+			fetchAsset(sound.url, {signal: controller.signal})
 				.then((arrayBuffer) => audioSystem.current.context.decodeAudioData(arrayBuffer))
 				.then((audioBuffer) => {
 					audioBuffers.current[sound.id] = audioBuffer;
 					updateProgress();
 				})
 				.catch((error: unknown) => {
+					if (controller.signal.aborted) return;
 					console.error(`Failed to load sound "${sound.id}" (${sound.url})`, error);
 					setFailedCount((count) => count + 1);
 				});
 		});
+
+		return () => {
+			controller.abort();
+			window.removeEventListener("load", onLoad);
+		};
 	}, []);
 
 	const stoneSymbolData = useMemo(
@@ -151,17 +155,10 @@ export default function LoadingScreen({
 		[progressModified]
 	);
 
+	// Only hint at the controls while the keybinds are still at their defaults.
+	const keybindsAreDefault = keybindIds.every((id) => settings[id] === defaultSettingValues[id]);
 	const areControlsHidden =
-		!showControls ||
-		isMobile ||
-		progressModified < 100 ||
-		!(
-			userSettings.find((e) => e.id === "keybindA")?.value === "a" &&
-			userSettings.find((e) => e.id === "keybindCUp")?.value === "ArrowUp" &&
-			userSettings.find((e) => e.id === "keybindCDown")?.value === "ArrowDown" &&
-			userSettings.find((e) => e.id === "keybindCLeft")?.value === "ArrowLeft" &&
-			userSettings.find((e) => e.id === "keybindCRight")?.value === "ArrowRight"
-		);
+		!showControls || isMobile || progressModified < 100 || !keybindsAreDefault;
 
 	const controlButtonClass =
 		"flex h-[1.6em] w-[1.6em] items-center justify-center rounded-[5px] border border-white text-center text-[1em] text-white";

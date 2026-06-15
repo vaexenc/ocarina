@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import MobileControls from "./MobileControls";
 import NoteBox from "./Notebox";
 import SongReference from "./SongReference";
@@ -6,13 +6,13 @@ import {songs} from "/src/song-data";
 import {
 	AudioBuffers,
 	AudioSystem,
-	Note,
+	KeybindId,
 	NoteName,
 	NoteObject,
+	SettingValues,
 	Song,
-	UserSettings,
 } from "/src/types";
-import {fadeOutSource} from "/src/util/util";
+import {createSound, fadeOutSource, playSound} from "/src/util/audio";
 
 const songStartDelay = 800;
 const canCancelDelay = 500;
@@ -20,12 +20,12 @@ const songEndDelay = 500;
 const ocarinaFadeDuration = 0.3;
 const songStartOcarinaFadeoutDelay = -100;
 
-const keybindsToNotes: Record<string, NoteName> = {
-	"keybindA": "a",
-	"keybindCUp": "u",
-	"keybindCDown": "d",
-	"keybindCLeft": "l",
-	"keybindCRight": "r",
+const keybindsToNotes: Record<KeybindId, NoteName> = {
+	keybindA: "a",
+	keybindCUp: "u",
+	keybindCDown: "d",
+	keybindCLeft: "l",
+	keybindCRight: "r",
 };
 
 const notesToDetune: Record<NoteName, number> = {
@@ -37,9 +37,17 @@ const notesToDetune: Record<NoteName, number> = {
 	"u": 600, // d
 };
 
+// Each song's note sequence as a string, so a played sequence is recognised with a single
+// `endsWith` instead of a hand-rolled reverse comparison.
+const songMatchers = Object.entries(songs).map(([id, song]) => ({
+	id,
+	song,
+	notes: song.notes.map((note) => (typeof note === "object" ? note.note : note)).join(""),
+}));
+
 export default function SongPlayer({
 	isReady,
-	userSettings,
+	settings,
 	isMobile,
 	isInputEnabled,
 	onSongCorrect,
@@ -49,7 +57,7 @@ export default function SongPlayer({
 	currentSongId,
 }: {
 	isReady: boolean;
-	userSettings: UserSettings;
+	settings: SettingValues;
 	isMobile: boolean;
 	isInputEnabled: boolean;
 	onSongCorrect: (songId: string, songData: Song) => void;
@@ -58,7 +66,7 @@ export default function SongPlayer({
 	audioBuffers: React.RefObject<AudioBuffers>;
 	currentSongId: string | null;
 }) {
-	const [text, setText] = useState(<span />);
+	const [matchedSong, setMatchedSong] = useState<Song | null>(null);
 	const [notes, setNotes] = useState<NoteObject[]>([]);
 	const [playerState, setPlayerState] = useState<"notPlaying" | "playing" | "playingCanCancel">(
 		"notPlaying"
@@ -69,19 +77,49 @@ export default function SongPlayer({
 	const currentOcarinaSource = useRef<AudioBufferSourceNode | null>(null);
 	const currentOcarinaGain = useRef<GainNode | null>(null);
 	const currentNote = useRef<NoteName | null>(null);
-	const ocarinaConvolverNode = useRef(audioSystem.current.context.createConvolver());
+	const playbackTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-	function addNote(note: NoteName) {
-		setNotes((notes) => {
-			const newNote: Note = {note: note, id: nextNoteId.current++};
+	const convolverRef = useRef<ConvolverNode | null>(null);
+	const convolver = (convolverRef.current ??= audioSystem.current.context.createConvolver());
 
-			if (notes.length > 7) {
-				return [...notes.slice(1), newNote];
-			} else {
-				return [...notes, newNote];
-			}
+	// Maps each configured key to the note it plays, for O(1) lookup on keydown.
+	const keyToNote = useMemo(() => {
+		const map = new Map<string, NoteName>();
+		(Object.entries(keybindsToNotes) as [KeybindId, NoteName][]).forEach(([id, note]) => {
+			map.set(settings[id], note);
 		});
-	}
+		return map;
+	}, [settings]);
+
+	const clearPlaybackTimeouts = useCallback(() => {
+		playbackTimeouts.current.forEach(clearTimeout);
+		playbackTimeouts.current = [];
+	}, []);
+
+	const resetPlayback = useCallback(() => {
+		clearPlaybackTimeouts();
+		setNotes([]);
+		setMatchedSong(null);
+		setPlayerState("notPlaying");
+	}, [clearPlaybackTimeouts]);
+
+	const fadeOutOcarina = useCallback(() => {
+		if (currentOcarinaSource.current && currentOcarinaGain.current) {
+			fadeOutSource(
+				audioSystem.current.context,
+				currentOcarinaSource.current,
+				currentOcarinaGain.current,
+				ocarinaFadeDuration
+			);
+		}
+	}, [audioSystem]);
+
+	const addNote = useCallback((note: NoteName) => {
+		setNotes((prev) => {
+			const newNote: NoteObject = {note, id: nextNoteId.current++};
+			return prev.length > 7 ? [...prev.slice(1), newNote] : [...prev, newNote];
+		});
+	}, []);
 
 	const inputPress = useCallback(
 		(note: NoteName) => {
@@ -91,93 +129,109 @@ export default function SongPlayer({
 			if (playerState === "playingCanCancel") {
 				currentSongSource.current?.stop();
 				currentPlayerId.current++;
-				setNotes([]);
-				setPlayerState("notPlaying");
-				setText(<span />);
+				resetPlayback();
 				onSongEnd();
 			}
 
 			addNote(note);
 
-			if (currentOcarinaSource.current && currentOcarinaGain.current) {
-				fadeOutSource(
-					audioSystem.current.context,
-					currentOcarinaSource.current,
-					currentOcarinaGain.current,
-					ocarinaFadeDuration
-				);
+			fadeOutOcarina();
+			const sound = playSound(audioSystem.current, audioBuffers.current.ocarina, {
+				gain: 0.3,
+				loop: true,
+				loopStart: 0.47,
+				loopEnd: 0.7163,
+				detune: notesToDetune[note],
+				extraDestination: convolver,
+			});
+			if (sound) {
+				currentOcarinaSource.current = sound.source;
+				currentOcarinaGain.current = sound.gain;
 			}
-
-			const source = audioSystem.current.context.createBufferSource();
-			source.buffer = audioBuffers.current.ocarina;
-			const gainNode = audioSystem.current.context.createGain();
-			gainNode.gain.value = 0.3;
-			gainNode.connect(audioSystem.current.gain);
-			gainNode.connect(ocarinaConvolverNode.current);
-			source.connect(gainNode);
-			source.loop = true;
-			source.loopStart = 0.47;
-			source.loopEnd = 0.7163;
-			source.start();
-			source.detune.value = notesToDetune[note];
-
-			currentOcarinaSource.current = source;
-			currentOcarinaGain.current = gainNode;
 			currentNote.current = note;
 		},
-		[currentSongId, isInputEnabled, playerState, onSongEnd, audioBuffers, audioSystem]
+		[
+			isInputEnabled,
+			currentSongId,
+			playerState,
+			addNote,
+			resetPlayback,
+			onSongEnd,
+			fadeOutOcarina,
+			audioSystem,
+			audioBuffers,
+			convolver,
+		]
 	);
 
 	const inputRelease = useCallback(
 		(note: NoteName) => {
 			if (note !== currentNote.current) return;
-			if (!currentOcarinaSource.current || !currentOcarinaGain.current) return;
 			if (playerState === "playing") return;
-
-			fadeOutSource(
-				audioSystem.current.context,
-				currentOcarinaSource.current,
-				currentOcarinaGain.current,
-				ocarinaFadeDuration
-			);
+			fadeOutOcarina();
 		},
-		[audioSystem, playerState]
+		[playerState, fadeOutOcarina]
 	);
 
-	useEffect(() => {
-		if (!isReady) return;
+	const playMatchedSong = useCallback(
+		(songId: string, song: Song, matchLength: number) => {
+			setMatchedSong(song);
+			setPlayerState("playing");
+			setNotes((prev) =>
+				prev.map((note, i) =>
+					i >= prev.length - matchLength ? {...note, isFlashing: true} : note
+				)
+			);
+			onSongCorrect(songId, song);
 
-		ocarinaConvolverNode.current.buffer = audioBuffers.current["ocarina-convolver-impulse"];
-		const gainNode = audioSystem.current.context.createGain();
-		gainNode.connect(audioSystem.current.gain);
-		gainNode.gain.value = 1;
-		ocarinaConvolverNode.current.connect(gainNode);
-	}, [isReady]);
+			const sound = createSound(audioSystem.current, audioBuffers.current[songId], {
+				gain: 0.6,
+			});
+			if (!sound) return;
+			currentSongSource.current = sound.source;
+
+			const playerId = currentPlayerId.current;
+			const schedule = (fn: () => void, delay: number) =>
+				playbackTimeouts.current.push(setTimeout(fn, delay));
+
+			// Fade out the held note just before the song proper begins.
+			schedule(fadeOutOcarina, Math.max(songStartDelay + songStartOcarinaFadeoutDelay, 0));
+
+			schedule(() => {
+				sound.source.start();
+				schedule(() => setPlayerState("playingCanCancel"), canCancelDelay);
+				schedule(
+					() => {
+						if (currentPlayerId.current !== playerId) return;
+						sound.source.stop();
+						resetPlayback();
+						onSongEnd();
+					},
+					audioBuffers.current[songId].duration * 1000 + songEndDelay
+				);
+			}, songStartDelay);
+		},
+		[onSongCorrect, onSongEnd, resetPlayback, fadeOutOcarina, audioSystem, audioBuffers]
+	);
+
+	// Detect a completed song from the most recent notes. Guarded so the flashing update
+	// below (which mutates `notes`) doesn't re-trigger the match.
+	useEffect(() => {
+		if (playerState !== "notPlaying" || notes.length === 0) return;
+
+		const played = notes.map((note) => note.note).join("");
+		const match = songMatchers.find((m) => m.notes.length > 0 && played.endsWith(m.notes));
+		if (match) playMatchedSong(match.id, match.song, match.notes.length);
+	}, [notes, playerState, playMatchedSong]);
 
 	useEffect(() => {
-		function handleKeyDown(event: KeyboardEvent) {
+		const onKey = (handler: (note: NoteName) => void) => (event: KeyboardEvent) => {
 			if (event.repeat) return;
-
-			Object.entries(keybindsToNotes).forEach(([keybindId, note]) => {
-				if (
-					event.key ===
-					userSettings.find((userSetting) => userSetting.id === keybindId)?.value
-				) {
-					inputPress(note);
-				}
-			});
-		}
-
-		function handleKeyUp(event: KeyboardEvent) {
-			Object.entries(keybindsToNotes).forEach(([keybindId, note]) => {
-				if (
-					event.key ===
-					userSettings.find((userSetting) => userSetting.id === keybindId)?.value
-				) {
-					inputRelease(note);
-				}
-			});
-		}
+			const note = keyToNote.get(event.key);
+			if (note) handler(note);
+		};
+		const handleKeyDown = onKey(inputPress);
+		const handleKeyUp = onKey(inputRelease);
 
 		window.addEventListener("keydown", handleKeyDown);
 		window.addEventListener("keyup", handleKeyUp);
@@ -186,87 +240,28 @@ export default function SongPlayer({
 			window.removeEventListener("keydown", handleKeyDown);
 			window.removeEventListener("keyup", handleKeyUp);
 		};
-	}, [userSettings, inputPress, inputRelease]);
+	}, [keyToNote, inputPress, inputRelease]);
 
 	useEffect(() => {
-		const lastEightNotes = notes.slice(-8).map((note) => {
-			return note.note;
-		});
-		const songEntries = Object.entries(songs);
-		for (const songEntry of songEntries) {
-			const [songId, songData] = songEntry;
+		if (!isReady) return;
 
-			if (songData.notes.length > lastEightNotes.length) continue;
+		convolver.buffer = audioBuffers.current["ocarina-convolver-impulse"];
+		const gainNode = audioSystem.current.context.createGain();
+		gainNode.gain.value = 1;
+		convolver.connect(gainNode);
+		gainNode.connect(audioSystem.current.gain);
+	}, [isReady, convolver, audioBuffers, audioSystem]);
 
-			for (let i = 0; i < songData.notes.length; i++) {
-				if (
-					songData.notes[songData.notes.length - 1 - i] !==
-					lastEightNotes[lastEightNotes.length - 1 - i]
-				)
-					break;
+	useEffect(() => clearPlaybackTimeouts, [clearPlaybackTimeouts]);
 
-				if (i === songData.notes.length - 1) {
-					setText(
-						<span>
-							You played {songData.omitThe ? "" : "the"}{" "}
-							<span style={{color: songData.color}}>{songData.name}</span>.
-						</span>
-					);
-					onSongCorrect(songId, songData);
-					setPlayerState("playing");
-
-					for (let i = 0; i < songData.notes.length; i++) {
-						notes[notes.length - 1 - i].isFlashing = true;
-					}
-
-					const source = audioSystem.current.context.createBufferSource();
-					source.buffer = audioBuffers.current[songId];
-					const gainNode = audioSystem.current.context.createGain();
-					gainNode.connect(audioSystem.current.gain);
-					gainNode.gain.value = 0.6;
-					source.connect(gainNode);
-					currentSongSource.current = source;
-
-					const playerId = currentPlayerId.current;
-
-					setTimeout(
-						() => {
-							if (currentOcarinaSource.current && currentOcarinaGain.current) {
-								fadeOutSource(
-									audioSystem.current.context,
-									currentOcarinaSource.current,
-									currentOcarinaGain.current,
-									ocarinaFadeDuration
-								);
-							}
-						},
-						Math.max(songStartDelay + songStartOcarinaFadeoutDelay, 0)
-					);
-
-					setTimeout(() => {
-						source.start();
-
-						setTimeout(() => {
-							setPlayerState("playingCanCancel");
-						}, canCancelDelay);
-
-						setTimeout(
-							() => {
-								if (currentPlayerId.current !== playerId) return;
-
-								source.stop();
-								setNotes([]);
-								setText(<span />);
-								onSongEnd();
-								setPlayerState("notPlaying");
-							},
-							audioBuffers.current[songId].duration * 1000 + songEndDelay
-						);
-					}, songStartDelay);
-				}
-			}
-		}
-	}, [notes, onSongCorrect, audioBuffers, audioSystem, onSongEnd]);
+	const text = matchedSong ? (
+		<span>
+			You played {matchedSong.omitThe ? "" : "the"}{" "}
+			<span style={{color: matchedSong.color}}>{matchedSong.name}</span>.
+		</span>
+	) : (
+		<span />
+	);
 
 	return (
 		<div className="fixed inset-0 flex h-full w-full flex-col items-center justify-center select-none">
