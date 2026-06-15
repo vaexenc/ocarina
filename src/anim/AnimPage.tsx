@@ -112,12 +112,15 @@ export default function AnimPage() {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [status, setStatus] = useState("Loading model…");
 	const [playing, setPlaying] = useState(true);
+	const [speed, setSpeed] = useState(0.5);
 	const [layers, setLayers] = useState<Layer[]>([]);
 	const [exported, setExported] = useState(false);
 
-	// Live value the animation loop reads without restarting the effect.
+	// Live values the animation loop reads without restarting the effect.
 	const playingRef = useRef(true);
 	playingRef.current = playing;
+	const speedRef = useRef(0.5);
+	speedRef.current = speed;
 
 	// Texture-keyed groups of meshes, populated after the model loads.
 	const groupsRef = useRef<Map<string, SkinnedMesh[]>>(new Map());
@@ -361,7 +364,7 @@ export default function AnimPage() {
 			last = now;
 			if (clip && restBones.length) {
 				if (playingRef.current) {
-					frame += dt * FPS;
+					frame += dt * FPS * speedRef.current;
 					frame %= clip.duration;
 				}
 				pose(clip, frame);
@@ -467,6 +470,18 @@ export default function AnimPage() {
 				>
 					{playing ? "Pause" : "Play"}
 				</button>
+				<label className="flex items-center gap-2 pl-1 pr-2 text-xs">
+					<input
+						type="range"
+						min={0}
+						max={2}
+						step={0.05}
+						value={speed}
+						onChange={(e) => setSpeed(Number(e.target.value))}
+						className="w-28 cursor-pointer"
+					/>
+					<span className="w-10 tabular-nums text-white/70">{speed.toFixed(2)}×</span>
+				</label>
 			</div>
 		</div>
 	);
