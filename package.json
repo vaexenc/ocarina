@@ -26,7 +26,7 @@
 		"@types/react-dom": "^18.2.7",
 		"@typescript-eslint/eslint-plugin": "^6.0.0",
 		"@typescript-eslint/parser": "^6.0.0",
-		"@vitejs/plugin-react-swc": "^3.3.2",
+		"@vitejs/plugin-react-swc": "^4.3.1",
 		"clsx": "^2.0.0",
 		"color": "^4.2.3",
 		"eslint": "^8.45.0",
@@ -37,7 +37,7 @@
 		"prettier": "^2.8.8",
 		"sass": "^1.68.0",
 		"typescript": "^5.0.2",
-		"vite": "^4.4.5",
-		"vite-plugin-minify": "^1.5.2"
+		"vite": "^8.0.16",
+		"vite-plugin-minify": "^3.0.0"
 	}
 }

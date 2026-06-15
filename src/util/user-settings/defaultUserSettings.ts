@@ -4,7 +4,7 @@ const defaultUserSettings: UserSettings = [
 	{id: "volume", name: "Volume", type: "slider", value: 0.25},
 	{
 		id: "bgMovement",
-		name: "Moving Background",
+		name: "Background Movement",
 		type: "toggle",
 		value: true,
 		hideOnMobile: true,
