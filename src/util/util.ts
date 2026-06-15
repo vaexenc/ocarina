@@ -20,6 +20,10 @@ export function clamp(value: number, min: number, max: number) {
 	return Math.min(Math.max(value, min), max);
 }
 
+export function assertNever(value: never): never {
+	throw new Error(`Unexpected value: ${String(value)}`);
+}
+
 export function checkIfMobileDevice() {
 	return (
 		/Mobile|Android|iOS|iPhone|iPad|Windows Phone/i.test(navigator.userAgent) ||

@@ -22,9 +22,9 @@ if (new URL(window.location.href).searchParams.has("reset")) {
 }
 
 const localUserSettings = loadLocalUserSettings();
-const userSettingsInitial =
-	(localUserSettings && createUpdatedUserSettings(defaultUserSettings, localUserSettings)) ||
-	defaultUserSettings;
+const userSettingsInitial = localUserSettings
+	? createUpdatedUserSettings(defaultUserSettings, localUserSettings)
+	: defaultUserSettings;
 
 const hasPlayedBefore = !!localStorage.getItem("ocarina.hasPlayedBefore");
 
@@ -54,9 +54,10 @@ function App() {
 	);
 	const audioBuffers = useRef<AudioBuffers>({});
 
-	audioSystem.current.gain.gain.value = userSettings.find(
-		(userSetting) => userSetting.id === "volume"
-	)!.value as number;
+	const volumeSetting = userSettings.find((userSetting) => userSetting.id === "volume");
+	if (volumeSetting) {
+		audioSystem.current.gain.gain.value = volumeSetting.value as number;
+	}
 
 	const onSongCorrect = useCallback((songId: string, songData: Song) => {
 		const source = audioSystem.current.context.createBufferSource();
@@ -94,7 +95,7 @@ function App() {
 				isParallaxOn={
 					!isMobile &&
 					Boolean(
-						userSettings.find((userSetting) => userSetting.id === "bgMovement")!.value
+						userSettings.find((userSetting) => userSetting.id === "bgMovement")?.value
 					)
 				}
 				doesParallaxUpdate={true /*!isMetaModalOpen*/}

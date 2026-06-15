@@ -27,11 +27,11 @@ export default function RangeInput({
 			max={max}
 			step={step}
 			defaultValue={value}
-			style={{"--value": value * 100 + "%"} as React.CSSProperties}
+			style={{"--value": `${value * 100}%`} as React.CSSProperties}
 			onChange={(e) => {
 				onChange(e);
 
-				if (timeoutRef) {
+				if (timeoutRef.current !== undefined) {
 					clearTimeout(timeoutRef.current);
 				}
 

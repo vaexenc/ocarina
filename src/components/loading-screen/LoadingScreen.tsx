@@ -58,8 +58,8 @@ export default function LoadingScreen({
 }: {
 	userSettings: UserSettings;
 	isMobile: boolean;
-	audioSystem: React.MutableRefObject<AudioSystem>;
-	audioBuffers: React.MutableRefObject<AudioBuffers>;
+	audioSystem: React.RefObject<AudioSystem>;
+	audioBuffers: React.RefObject<AudioBuffers>;
 	onClose: () => void;
 	showControls: boolean;
 }) {
@@ -101,7 +101,7 @@ export default function LoadingScreen({
 					audioBuffers.current[sound.id] = audioBuffer;
 					updateProgress();
 				})
-				.catch((error) => {
+				.catch((error: unknown) => {
 					console.error(`Failed to load sound "${sound.id}" (${sound.url})`, error);
 					setFailedCount((count) => count + 1);
 				});
@@ -165,7 +165,7 @@ export default function LoadingScreen({
 						[style["loading-screen--loaded"]]: progressModified >= 100,
 						[style["loading-screen--fading-out"]]: isFadingOut,
 					})}
-					onClick={async () => {
+					onClick={() => {
 						if (progressModified >= 100) {
 							const source = audioSystem.current.context.createBufferSource();
 							source.buffer = audioBuffers.current.confirm;

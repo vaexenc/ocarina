@@ -27,18 +27,20 @@ export default function SongReference({currentSongId}: {currentSongId: string | 
 	const songReferenceRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		function onScroll() {
-			updateSongReferenceElementStyle(songReferenceRef.current!);
-		}
+		const songReferenceElement = songReferenceRef.current;
+		if (!songReferenceElement) return;
 
-		function onWindowResize() {
-			updateSongReferenceElementStyle(songReferenceRef.current!);
-		}
+		const onScroll = () => {
+			updateSongReferenceElementStyle(songReferenceElement);
+		};
 
-		const songReferenceElement = songReferenceRef.current!;
+		const onWindowResize = () => {
+			updateSongReferenceElementStyle(songReferenceElement);
+		};
+
 		songReferenceElement.addEventListener("scroll", onScroll);
 		window.addEventListener("resize", onWindowResize);
-		updateSongReferenceElementStyle(songReferenceRef.current!);
+		updateSongReferenceElementStyle(songReferenceElement);
 
 		return () => {
 			songReferenceElement.removeEventListener("scroll", onScroll);

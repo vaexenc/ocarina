@@ -8,9 +8,11 @@ export default function Keybind({
 	keyboardKey: string;
 	awaitingInput: boolean;
 }) {
-	const label =
-		(awaitingInput && "...") ||
-		(keyboardKey.length > 10 ? keyboardKey.slice(0, 10 - 1) + "..." : keyboardKey);
+	const label = awaitingInput
+		? "..."
+		: keyboardKey.length > 10
+			? keyboardKey.slice(0, 10 - 1) + "..."
+			: keyboardKey;
 
 	return (
 		<div

@@ -8,6 +8,7 @@ import IconGithub from "/src/images/icons/github.svg?react";
 import IconX from "/src/images/icons/x.svg?react";
 import IconDiscord from "/src/images/icons/discord.svg?react";
 import {UserSetting, UserSettings} from "/src/types";
+import {assertNever} from "/src/util/util";
 
 function ModalTrigger({onClick}: {onClick: React.MouseEventHandler<HTMLButtonElement>}) {
 	return (
@@ -73,76 +74,75 @@ function Modal({
 					<h2 className="headline">Settings</h2>
 					<div className="settings">
 						{userSettings.map((userSetting) => {
-							if (userSetting.type === "toggle") {
-								return (
-									<button
-										className={clsx("setting toggle", {
-											"hide-on-mobile": userSetting.hideOnMobile,
-										})}
-										key={userSetting.id}
-										onClick={() => {
-											const newUserSettings = changeUserSetting(
-												userSetting,
-												!userSetting.value
-											);
-											saveUserSettings(newUserSettings);
-										}}
-									>
-										<div className="setting-label">{userSetting.name}</div>
-										<Toggle isChecked={userSetting.value} />
-									</button>
-								);
-							}
-
-							if (userSetting.type === "slider") {
-								return (
-									<div
-										className={clsx("setting slider", {
-											"hide-on-mobile": userSetting.hideOnMobile,
-										})}
-										key={userSetting.id}
-									>
-										<div className="setting-label">{userSetting.name}</div>
-										<RangeInput
-											className={"range-input"}
-											min={0}
-											max={1}
-											step={0.01}
-											value={userSetting.value}
-											onChange={(e) => {
-												changeUserSetting(userSetting, e.target.value);
+							switch (userSetting.type) {
+								case "toggle":
+									return (
+										<button
+											className={clsx("setting toggle", {
+												"hide-on-mobile": userSetting.hideOnMobile,
+											})}
+											key={userSetting.id}
+											onClick={() => {
+												const newUserSettings = changeUserSetting(
+													userSetting,
+													!userSetting.value
+												);
+												saveUserSettings(newUserSettings);
 											}}
-											onChangeDebounce={() => {
-												saveUserSettings(userSettingsRef.current);
-											}}
-										/>
-									</div>
-								);
-							}
-
-							if (userSetting.type === "keybind") {
-								return (
-									<button
-										className={clsx("setting keybind", {
-											"hide-on-mobile": userSetting.hideOnMobile,
-										})}
-										key={userSetting.id}
-										onClick={() => {
-											setCurrentKeybindId(userSetting.id);
-										}}
-									>
-										<div className="setting-label">
-											<div className="input-label">
-												<userSetting.image className="input-image" />
-												{userSetting.name}
-											</div>
+										>
+											<div className="setting-label">{userSetting.name}</div>
+											<Toggle isChecked={userSetting.value} />
+										</button>
+									);
+								case "slider":
+									return (
+										<div
+											className={clsx("setting slider", {
+												"hide-on-mobile": userSetting.hideOnMobile,
+											})}
+											key={userSetting.id}
+										>
+											<div className="setting-label">{userSetting.name}</div>
+											<RangeInput
+												className={"range-input"}
+												min={0}
+												max={1}
+												step={0.01}
+												value={userSetting.value}
+												onChange={(e) => {
+													changeUserSetting(userSetting, e.target.value);
+												}}
+												onChangeDebounce={() => {
+													saveUserSettings(userSettingsRef.current);
+												}}
+											/>
 										</div>
-										<Keybind
-											keyboardKey={userSetting.value}
-											awaitingInput={currentKeybindId === userSetting.id}
-										/>
-									</button>
-								);
+									);
+								case "keybind":
+									return (
+										<button
+											className={clsx("setting keybind", {
+												"hide-on-mobile": userSetting.hideOnMobile,
+											})}
+											key={userSetting.id}
+											onClick={() => {
+												setCurrentKeybindId(userSetting.id);
+											}}
+										>
+											<div className="setting-label">
+												<div className="input-label">
+													<userSetting.image className="input-image" />
+													{userSetting.name}
+												</div>
+											</div>
+											<Keybind
+												keyboardKey={userSetting.value}
+												awaitingInput={currentKeybindId === userSetting.id}
+											/>
+										</button>
+									);
+								default:
+									return assertNever(userSetting);
 							}
 						})}
 					</div>
@@ -235,16 +235,16 @@ export default function MetaModal({
 			const newUserSettings = userSettings.map((prevUserSetting) => {
 				if (prevUserSetting.id !== userSetting.id) return prevUserSetting;
 
-				if (prevUserSetting.type === "slider")
-					return {...prevUserSetting, value: Number(value)};
-
-				if (prevUserSetting.type === "toggle")
-					return {...prevUserSetting, value: Boolean(value)};
-
-				if (prevUserSetting.type === "keybind")
-					return {...prevUserSetting, value: String(value)};
-
-				return prevUserSetting;
+				switch (prevUserSetting.type) {
+					case "slider":
+						return {...prevUserSetting, value: Number(value)};
+					case "toggle":
+						return {...prevUserSetting, value: Boolean(value)};
+					case "keybind":
+						return {...prevUserSetting, value: String(value)};
+					default:
+						return assertNever(prevUserSetting);
+				}
 			});
 
 			setUserSettings(newUserSettings);
@@ -267,12 +267,14 @@ export default function MetaModal({
 			} else {
 				if (currentKeybindId !== null) {
 					event.preventDefault();
-					const newUserSettings = changeUserSetting(
-						userSettings.find((userSetting) => userSetting.id === currentKeybindId)!,
-						event.key
+					const userSetting = userSettings.find(
+						(userSetting) => userSetting.id === currentKeybindId
 					);
-					saveUserSettings(newUserSettings);
-					setCurrentKeybindId(() => null);
+					if (userSetting) {
+						const newUserSettings = changeUserSetting(userSetting, event.key);
+						saveUserSettings(newUserSettings);
+						setCurrentKeybindId(() => null);
+					}
 				}
 			}
 		},

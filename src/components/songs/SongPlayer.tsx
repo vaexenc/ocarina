@@ -56,8 +56,8 @@ export default function SongPlayer({
 	isInputEnabled: boolean;
 	onSongCorrect: (songId: string, songData: Song) => void;
 	onSongEnd: () => void;
-	audioSystem: React.MutableRefObject<AudioSystem>;
-	audioBuffers: React.MutableRefObject<AudioBuffers>;
+	audioSystem: React.RefObject<AudioSystem>;
+	audioBuffers: React.RefObject<AudioBuffers>;
 	currentSongId: string | null;
 }) {
 	const [text, setText] = useState(<span />);
@@ -164,7 +164,7 @@ export default function SongPlayer({
 			Object.entries(keybindsToNotes).forEach(([keybindId, note]) => {
 				if (
 					event.key ===
-					userSettings.find((userSetting) => userSetting.id === keybindId)!.value
+					userSettings.find((userSetting) => userSetting.id === keybindId)?.value
 				) {
 					inputPress(note);
 				}
@@ -175,7 +175,7 @@ export default function SongPlayer({
 			Object.entries(keybindsToNotes).forEach(([keybindId, note]) => {
 				if (
 					event.key ===
-					userSettings.find((userSetting) => userSetting.id === keybindId)!.value
+					userSettings.find((userSetting) => userSetting.id === keybindId)?.value
 				) {
 					inputRelease(note);
 				}
