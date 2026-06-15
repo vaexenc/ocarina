@@ -1,6 +1,6 @@
 import clsx from "clsx";
-import Clef from "/src/images/clef.svg?react";
 import {noteMap} from "/src/data/note-map";
+import Clef from "/src/images/clef.svg?react";
 import {NoteObject} from "/src/types";
 
 const rootByVariant = {

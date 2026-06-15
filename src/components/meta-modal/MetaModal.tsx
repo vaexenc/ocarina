@@ -6,9 +6,9 @@ import Toggle from "./Toggle";
 import IconDiscord from "/src/images/icons/discord.svg?react";
 import IconGithub from "/src/images/icons/github.svg?react";
 import IconX from "/src/images/icons/x.svg?react";
+import {settingFields} from "/src/settings/setting-fields";
 import {KeybindId, SettingId, SettingValues} from "/src/types";
 import {assertNever} from "/src/util/assert";
-import {settingFields} from "/src/settings/setting-fields";
 
 type ChangeSetting = <K extends SettingId>(id: K, value: SettingValues[K]) => void;
 

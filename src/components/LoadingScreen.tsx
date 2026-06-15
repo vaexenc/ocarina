@@ -1,16 +1,16 @@
 import clsx from "clsx";
 import Color from "color";
 import {useCallback, useEffect, useMemo, useState} from "react";
+import {songs} from "/src/data/song-data";
 import IconGoron from "/src/images/icons/goron.svg?react";
 import IconKokiri from "/src/images/icons/kokiri.svg?react";
 import IconTriforce from "/src/images/icons/triforce.svg?react";
 import IconZora from "/src/images/icons/zora.svg?react";
-import {songs} from "/src/data/song-data";
+import {defaultSettingValues, keybindIds} from "/src/settings/setting-fields";
 import {AudioBuffers, AudioSystem, SettingValues} from "/src/types";
 import {playSound} from "/src/util/audio";
 import {fetchAsset} from "/src/util/fetch";
 import {clamp, map} from "/src/util/math";
-import {defaultSettingValues, keybindIds} from "/src/settings/setting-fields";
 
 const soundsToFetch = [
 	...Object.entries(songs).map((song) => {

@@ -1,4 +1,5 @@
 {
+	"plugins": ["prettier-plugin-organize-imports"],
 	"bracketSpacing": false,
 	"endOfLine": "lf",
 	"printWidth": 100,
