@@ -7,5 +7,5 @@
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true
 	},
-	"include": ["vite.config.ts", "injectHtmlPlugin.ts"]
+	"include": ["vite.config.ts", "inject-html-plugin.ts"]
 }

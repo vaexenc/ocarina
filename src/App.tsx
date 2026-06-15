@@ -4,13 +4,13 @@ import LoadingScreen from "./components/loading-screen/LoadingScreen";
 import MetaModal from "./components/meta-modal/MetaModal";
 import SongPlayer from "./components/songs/SongPlayer";
 import {AudioBuffers, AudioSystem, Song, UserSettings} from "./types";
-import defaultUserSettings from "./util/user-settings/defaultUserSettings";
+import defaultUserSettings from "./util/user-settings/default-user-settings";
 import {
 	createUpdatedUserSettings,
 	deleteUserSettings,
 	loadLocalUserSettings,
 	saveUserSettings,
-} from "./util/user-settings/userSettings";
+} from "./util/user-settings/user-settings";
 import {checkIfMobileDevice} from "./util/util";
 
 if (new URL(window.location.href).searchParams.has("reset")) {

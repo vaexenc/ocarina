@@ -3,7 +3,7 @@ import {resolve} from "path";
 import {defineConfig} from "vite";
 import {ViteMinifyPlugin} from "vite-plugin-minify";
 import svgr from "vite-plugin-svgr";
-import injectHtmlPlugin from "./injectHtmlPlugin";
+import injectHtmlPlugin from "./inject-html-plugin";
 
 // https://vitejs.dev/config/
 export default defineConfig({
