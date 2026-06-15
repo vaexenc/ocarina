@@ -1,12 +1,13 @@
 import clsx from "clsx";
 import Color from "color";
-import {useEffect, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import IconGoron from "/src/images/icons/goron.svg?react";
 import IconKokiri from "/src/images/icons/kokiri.svg?react";
 import IconTriforce from "/src/images/icons/triforce.svg?react";
 import IconZora from "/src/images/icons/zora.svg?react";
 import {songs} from "/src/song-data";
 import {AudioBuffers, AudioSystem, SettingValues} from "/src/types";
+import {playSound} from "/src/util/audio";
 import {clamp, fetchAsset, map} from "/src/util/util";
 import {defaultSettingValues, keybindIds} from "/src/util/user-settings/default-user-settings";
 
@@ -22,6 +23,9 @@ const soundsToFetch = [
 	{id: "menu-close", url: "audio/menu-close.ogg"},
 	{id: "ocarina-convolver-impulse", url: "audio/ocarina-convolver-impulse.ogg"},
 ];
+
+// Each fetched sound plus the document `load` event each contribute one step of progress.
+const progressTotalAmount = soundsToFetch.length + 1;
 
 const stoneIcons = {
 	kokiri: IconKokiri,
@@ -75,7 +79,7 @@ export default function LoadingScreen({
 }: {
 	settings: SettingValues;
 	isMobile: boolean;
-	audioSystem: React.RefObject<AudioSystem>;
+	audioSystem: AudioSystem;
 	audioBuffers: React.RefObject<AudioBuffers>;
 	onClose: () => void;
 	showControls: boolean;
@@ -85,13 +89,10 @@ export default function LoadingScreen({
 	const [visible, setVisible] = useState(true);
 	const [isFadingOut, setIsFadingOut] = useState(false);
 
-	function updateProgress() {
-		setProgress((progress) => {
-			return progress + 100 / progressTotalAmount;
-		});
-	}
+	const updateProgress = useCallback(() => {
+		setProgress((progress) => progress + 100 / progressTotalAmount);
+	}, []);
 
-	const progressTotalAmount = soundsToFetch.length + 1; // + document load
 	const progressModified = progress > 99.99 ? 100 : progress; // snap past float drift to a clean 100
 
 	useEffect(() => {
@@ -106,7 +107,7 @@ export default function LoadingScreen({
 
 		soundsToFetch.forEach((sound) => {
 			fetchAsset(sound.url, {signal: controller.signal})
-				.then((arrayBuffer) => audioSystem.current.context.decodeAudioData(arrayBuffer))
+				.then((arrayBuffer) => audioSystem.context.decodeAudioData(arrayBuffer))
 				.then((audioBuffer) => {
 					audioBuffers.current[sound.id] = audioBuffer;
 					updateProgress();
@@ -122,7 +123,7 @@ export default function LoadingScreen({
 			controller.abort();
 			window.removeEventListener("load", onLoad);
 		};
-	}, []);
+	}, [audioSystem, audioBuffers, updateProgress]);
 
 	const stoneSymbolData = useMemo(
 		() => [
@@ -169,10 +170,7 @@ export default function LoadingScreen({
 				)}
 				onClick={() => {
 					if (progressModified >= 100) {
-						const source = audioSystem.current.context.createBufferSource();
-						source.buffer = audioBuffers.current.confirm;
-						source.connect(audioSystem.current.gain);
-						source.start();
+						playSound(audioSystem, audioBuffers.current.confirm);
 
 						setIsFadingOut(true);
 						setTimeout(() => {

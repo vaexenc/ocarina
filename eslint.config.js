@@ -34,7 +34,7 @@ export default tseslint.config(
 			],
 			"@typescript-eslint/no-floating-promises": "off",
 			"@typescript-eslint/restrict-template-expressions": ["error", {allowNumber: true}],
-			"react-hooks/exhaustive-deps": "off",
+			"react-hooks/exhaustive-deps": "warn",
 			"react-refresh/only-export-components": ["warn", {allowConstantExport: true}],
 		},
 	},

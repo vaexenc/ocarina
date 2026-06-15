@@ -72,7 +72,7 @@ export function useOcarinaPlayback({
 	isInputEnabled: boolean;
 	onSongCorrect: (songId: string, songData: Song) => void;
 	onSongEnd: () => void;
-	audioSystem: React.RefObject<AudioSystem>;
+	audioSystem: AudioSystem;
 	audioBuffers: React.RefObject<AudioBuffers>;
 }): OcarinaPlayback {
 	const [matched, setMatched] = useState<{id: string; song: Song} | null>(null);
@@ -88,7 +88,7 @@ export function useOcarinaPlayback({
 	const playbackTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
 
 	const convolverRef = useRef<ConvolverNode | null>(null);
-	const convolver = (convolverRef.current ??= audioSystem.current.context.createConvolver());
+	const convolver = (convolverRef.current ??= audioSystem.context.createConvolver());
 
 	// Maps each configured key to the note it plays, for O(1) lookup on keydown.
 	const keyToNote = useMemo(() => {
@@ -114,7 +114,7 @@ export function useOcarinaPlayback({
 	const fadeOutOcarina = useCallback(() => {
 		if (currentOcarinaSource.current && currentOcarinaGain.current) {
 			fadeOutSource(
-				audioSystem.current.context,
+				audioSystem.context,
 				currentOcarinaSource.current,
 				currentOcarinaGain.current,
 				ocarinaFadeDuration
@@ -145,7 +145,7 @@ export function useOcarinaPlayback({
 			addNote(note);
 
 			fadeOutOcarina();
-			const sound = playSound(audioSystem.current, audioBuffers.current.ocarina, {
+			const sound = playSound(audioSystem, audioBuffers.current.ocarina, {
 				gain: 0.3,
 				loop: true,
 				loopStart: 0.47,
@@ -192,7 +192,7 @@ export function useOcarinaPlayback({
 			);
 			onSongCorrect(songId, song);
 
-			const sound = createSound(audioSystem.current, audioBuffers.current[songId], {
+			const sound = createSound(audioSystem, audioBuffers.current[songId], {
 				gain: 0.6,
 			});
 			if (!sound) return;
@@ -252,10 +252,10 @@ export function useOcarinaPlayback({
 		if (!isReady) return;
 
 		convolver.buffer = audioBuffers.current["ocarina-convolver-impulse"];
-		const gainNode = audioSystem.current.context.createGain();
+		const gainNode = audioSystem.context.createGain();
 		gainNode.gain.value = 1;
 		convolver.connect(gainNode);
-		gainNode.connect(audioSystem.current.gain);
+		gainNode.connect(audioSystem.gain);
 	}, [isReady, convolver, audioBuffers, audioSystem]);
 
 	useEffect(() => clearPlaybackTimeouts, [clearPlaybackTimeouts]);

@@ -22,9 +22,10 @@ function App({
 	const [currentSongId, setCurrentSongId] = useState<string | null>(null);
 
 	// Lazily create the single AudioContext on first render (and never on re-renders).
+	// The system is immutable once created, so we pass the value (not the ref) downward.
 	const audioSystemRef = useRef<AudioSystem | null>(null);
 	audioSystemRef.current ??= createAudioSystem();
-	const audioSystem = audioSystemRef as React.RefObject<AudioSystem>;
+	const audioSystem = audioSystemRef.current;
 	const audioBuffers = useRef<AudioBuffers>({});
 
 	// Persist settings, debounced so dragging the volume slider doesn't hammer localStorage.
@@ -34,12 +35,12 @@ function App({
 	}, [settings]);
 
 	useEffect(() => {
-		audioSystem.current.gain.gain.value = settings.volume;
+		audioSystem.gain.gain.value = settings.volume;
 	}, [settings.volume, audioSystem]);
 
 	const onSongCorrect = useCallback(
 		(songId: string, songData: Song) => {
-			playSound(audioSystem.current, audioBuffers.current["song-correct"], {gain: 0.5});
+			playSound(audioSystem, audioBuffers.current["song-correct"], {gain: 0.5});
 			if (songData.notes.includes("a")) {
 				localStorage.setItem("ocarina.hasPlayedBefore", "1");
 			}
@@ -81,13 +82,13 @@ function App({
 				onOpen={() => {
 					setIsMetaModalOpen(true);
 					if (!currentSongId) {
-						playSound(audioSystem.current, audioBuffers.current["menu-open"]);
+						playSound(audioSystem, audioBuffers.current["menu-open"]);
 					}
 				}}
 				onClose={() => {
 					setIsMetaModalOpen(false);
 					if (!currentSongId) {
-						playSound(audioSystem.current, audioBuffers.current["menu-close"]);
+						playSound(audioSystem, audioBuffers.current["menu-close"]);
 					}
 				}}
 				settings={settings}

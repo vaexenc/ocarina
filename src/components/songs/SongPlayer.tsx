@@ -20,7 +20,7 @@ export default function SongPlayer({
 	isInputEnabled: boolean;
 	onSongCorrect: (songId: string, songData: Song) => void;
 	onSongEnd: () => void;
-	audioSystem: React.RefObject<AudioSystem>;
+	audioSystem: AudioSystem;
 	audioBuffers: React.RefObject<AudioBuffers>;
 }) {
 	const {notes, matchedSong, matchedSongId, inputPress, inputRelease} = useOcarinaPlayback({
