@@ -8,7 +8,7 @@ import IconGithub from "/src/images/icons/github.svg?react";
 import IconX from "/src/images/icons/x.svg?react";
 import {KeybindId, SettingId, SettingValues} from "/src/types";
 import {assertNever} from "/src/util/assert";
-import {settingDefs} from "/src/settings/setting-defs";
+import {settingFields} from "/src/settings/setting-fields";
 
 type ChangeSetting = <K extends SettingId>(id: K, value: SettingValues[K]) => void;
 
@@ -49,32 +49,32 @@ function SettingControl({
 	setCurrentKeybindId: React.Dispatch<React.SetStateAction<KeybindId | null>>;
 	isMobile: boolean;
 }) {
-	return settingDefs.map((def) => {
-		const hidden = isMobile && def.hideOnMobile;
+	return settingFields.map((field) => {
+		const hidden = isMobile && field.hideOnMobile;
 
-		switch (def.type) {
+		switch (field.type) {
 			case "toggle":
 				return (
 					<button
 						className={clsx(settingClass, "cursor-pointer", {hidden})}
-						key={def.id}
-						onClick={() => changeSetting(def.id, !settings[def.id])}
+						key={field.id}
+						onClick={() => changeSetting(field.id, !settings[field.id])}
 					>
-						<div className="mr-[1.5em]">{def.name}</div>
-						<Toggle isChecked={settings[def.id]} />
+						<div className="mr-[1.5em]">{field.name}</div>
+						<Toggle isChecked={settings[field.id]} />
 					</button>
 				);
 			case "slider":
 				return (
-					<div className={clsx(settingClass, {hidden})} key={def.id}>
-						<div className="mr-[1.5em]">{def.name}</div>
+					<div className={clsx(settingClass, {hidden})} key={field.id}>
+						<div className="mr-[1.5em]">{field.name}</div>
 						<RangeInput
 							className="w-full"
 							min={0}
 							max={1}
 							step={0.01}
-							value={settings[def.id]}
-							onChange={(e) => changeSetting(def.id, Number(e.target.value))}
+							value={settings[field.id]}
+							onChange={(e) => changeSetting(field.id, Number(e.target.value))}
 						/>
 					</div>
 				);
@@ -82,23 +82,23 @@ function SettingControl({
 				return (
 					<button
 						className={clsx(settingClass, "cursor-pointer", {hidden})}
-						key={def.id}
-						onClick={() => setCurrentKeybindId(def.id)}
+						key={field.id}
+						onClick={() => setCurrentKeybindId(field.id)}
 					>
 						<div className="mr-[1.5em]">
 							<div className="flex items-center">
-								<def.image className="mr-[10px] h-auto w-[40px]" />
-								{def.name}
+								<field.image className="mr-[10px] h-auto w-[40px]" />
+								{field.name}
 							</div>
 						</div>
 						<Keybind
-							keyboardKey={settings[def.id]}
-							awaitingInput={currentKeybindId === def.id}
+							keyboardKey={settings[field.id]}
+							awaitingInput={currentKeybindId === field.id}
 						/>
 					</button>
 				);
 			default:
-				return assertNever(def);
+				return assertNever(field);
 		}
 	});
 }

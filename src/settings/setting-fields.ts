@@ -3,9 +3,9 @@ import CDown from "/src/images/buttons/c-down.svg?react";
 import CLeft from "/src/images/buttons/c-left.svg?react";
 import CRight from "/src/images/buttons/c-right.svg?react";
 import CUp from "/src/images/buttons/c-up.svg?react";
-import {KeybindId, SettingDef, SettingValues} from "/src/types";
+import {KeybindId, SettingField, SettingValues} from "/src/types";
 
-export const settingDefs: readonly SettingDef[] = [
+export const settingFields: readonly SettingField[] = [
 	{
 		id: "volume",
 		name: "Volume",
@@ -61,10 +61,10 @@ export const settingDefs: readonly SettingDef[] = [
 	},
 ];
 
-export const keybindIds: readonly KeybindId[] = settingDefs
-	.filter((def): def is Extract<SettingDef, {type: "keybind"}> => def.type === "keybind")
-	.map((def) => def.id);
+export const keybindIds: readonly KeybindId[] = settingFields
+	.filter((field): field is Extract<SettingField, {type: "keybind"}> => field.type === "keybind")
+	.map((field) => field.id);
 
 export const defaultSettingValues = Object.fromEntries(
-	settingDefs.map((def) => [def.id, def.default])
+	settingFields.map((field) => [field.id, field.default])
 ) as SettingValues;

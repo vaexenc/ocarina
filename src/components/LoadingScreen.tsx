@@ -10,7 +10,7 @@ import {AudioBuffers, AudioSystem, SettingValues} from "/src/types";
 import {playSound} from "/src/util/audio";
 import {fetchAsset} from "/src/util/fetch";
 import {clamp, map} from "/src/util/math";
-import {defaultSettingValues, keybindIds} from "/src/settings/setting-defs";
+import {defaultSettingValues, keybindIds} from "/src/settings/setting-fields";
 
 const soundsToFetch = [
 	...Object.entries(songs).map((song) => {

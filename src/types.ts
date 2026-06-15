@@ -42,15 +42,15 @@ export type KeybindId =
 // The static metadata describing how each setting is rendered, in display order.
 // Discriminating on `type` narrows `id`, which in turn types the value lookup, so
 // the modal can render and edit each control without a single cast.
-type SliderDef = {readonly type: "slider"; readonly id: "volume"; readonly default: number};
-type ToggleDef = {readonly type: "toggle"; readonly id: "bgMovement"; readonly default: boolean};
-type KeybindDef = {
+type SliderField = {readonly type: "slider"; readonly id: "volume"; readonly default: number};
+type ToggleField = {readonly type: "toggle"; readonly id: "bgMovement"; readonly default: boolean};
+type KeybindField = {
 	readonly type: "keybind";
 	readonly id: KeybindId;
 	readonly image: SvgComponent;
 	readonly default: string;
 };
-export type SettingDef = {
+export type SettingField = {
 	readonly name: string;
 	readonly hideOnMobile?: boolean;
-} & (SliderDef | ToggleDef | KeybindDef);
+} & (SliderField | ToggleField | KeybindField);
