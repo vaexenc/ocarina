@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import Keybind from "./Keybind";
 import RangeInput from "./RangeInput";
 import Toggle from "./Toggle";
@@ -51,6 +51,14 @@ function Collapse({
 	hidden?: boolean;
 	children: React.ReactNode;
 }) {
+	// The body clips its content while expanding/collapsing so the animation looks clean. Once
+	// fully open we reveal overflow so the keybind buttons' focus/active outlines aren't cut off at
+	// the edges. Resetting on close re-arms the clip for the next open animation.
+	const [revealed, setRevealed] = useState(isOpen);
+	useEffect(() => {
+		if (!isOpen) setRevealed(false);
+	}, [isOpen]);
+
 	return (
 		<div className={clsx({hidden})}>
 			<button
@@ -81,8 +89,13 @@ function Collapse({
 					"grid transition-[grid-template-rows] duration-300",
 					isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
 				)}
+				onTransitionEnd={(e) => {
+					if (e.target === e.currentTarget && isOpen) setRevealed(true);
+				}}
 			>
-				<div className="overflow-hidden">{children}</div>
+				<div className={isOpen && revealed ? "overflow-visible" : "overflow-hidden"}>
+					{children}
+				</div>
 			</div>
 		</div>
 	);
@@ -292,6 +305,11 @@ function Modal({
 		onClose();
 	};
 
+	// Only a click that both started and ended on the backdrop itself should close. Without the
+	// mousedown check, a press starting inside the panel and released on the backdrop (e.g. a
+	// slider drag) would fire a click on their common ancestor and wrongly close the modal.
+	const backdropMouseDown = useRef(false);
+
 	return (
 		<div
 			className={clsx(
@@ -305,14 +323,14 @@ function Modal({
 			></button>
 			<div
 				className="flex h-full w-full items-center justify-center overflow-auto"
-				onClick={close}
+				onMouseDown={(e) => {
+					backdropMouseDown.current = e.target === e.currentTarget;
+				}}
+				onClick={(e) => {
+					if (e.target === e.currentTarget && backdropMouseDown.current) close();
+				}}
 			>
-				<div
-					className="my-auto w-full max-w-[600px] p-[75px_15px]"
-					onClick={(e) => {
-						e.stopPropagation();
-					}}
-				>
+				<div className="my-auto w-full max-w-[600px] p-[75px_15px]">
 					<h2 className={headingClass}>Settings</h2>
 					<div className="select-none">
 						<SettingControl
