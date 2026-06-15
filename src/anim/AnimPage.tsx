@@ -8,6 +8,9 @@ import {
 	PerspectiveCamera,
 	Scene,
 	SkinnedMesh,
+	SRGBColorSpace,
+	Texture,
+	TextureLoader,
 	Vector3,
 	WebGLRenderer,
 	type Bone,
@@ -22,6 +25,14 @@ const SKELETON_URL = "/models/link-adult/anim/skeleton.json";
 const CLIP_URL = "/models/link-adult/anim/nml_okarina_swing.csab";
 
 const FPS = 30;
+
+// Selectable face-expression textures (link_e00.png … link_e07.png). Only e00 is
+// baked into the model; the rest are swapped onto the face material at runtime.
+const FACE_DIR = "/models/link-adult";
+const FACE_IDS = Array.from({length: 8}, (_, i) => String(i).padStart(2, "0"));
+// The model node carrying the face (link_e00) material; its material map is what
+// the expression dropdown swaps.
+const FACE_NODE = "nodes_141_";
 
 // Label a mesh by its texture filename (the only meaningful identifier the rip
 // carries), e.g. "link_e00", "p_tex08". Falls back to the node name.
@@ -115,6 +126,7 @@ export default function AnimPage() {
 	const [speed, setSpeed] = useState(0.5);
 	const [layers, setLayers] = useState<Layer[]>([]);
 	const [exported, setExported] = useState(false);
+	const [face, setFace] = useState(FACE_IDS[0]);
 
 	// Live values the animation loop reads without restarting the effect.
 	const playingRef = useRef(true);
@@ -124,6 +136,34 @@ export default function AnimPage() {
 
 	// Texture-keyed groups of meshes, populated after the model loads.
 	const groupsRef = useRef<Map<string, SkinnedMesh[]>>(new Map());
+
+	// Face material(s) whose texture map we hot-swap, plus the original (e00)
+	// texture to copy color/wrap settings from. The last swapped-in texture is
+	// tracked so it can be disposed when replaced.
+	type FaceMat = {map: Texture | null; needsUpdate: boolean};
+	const faceMaterialsRef = useRef<{mat: FaceMat; base: Texture | null}[]>([]);
+	const swappedFaceTexRef = useRef<Texture | null>(null);
+
+	const applyFace = (id: string) => {
+		const entries = faceMaterialsRef.current;
+		if (!entries.length) return;
+		new TextureLoader().load(`${FACE_DIR}/link_e${id}.png`, (tex) => {
+			const base = entries[0].base;
+			tex.colorSpace = base?.colorSpace ?? SRGBColorSpace;
+			tex.flipY = base?.flipY ?? false;
+			if (base) {
+				tex.wrapS = base.wrapS;
+				tex.wrapT = base.wrapT;
+			}
+			tex.needsUpdate = true;
+			for (const {mat} of entries) {
+				mat.map = tex;
+				mat.needsUpdate = true;
+			}
+			swappedFaceTexRef.current?.dispose();
+			swappedFaceTexRef.current = tex;
+		});
+	};
 
 	const setLayerVisible = (key: string, visible: boolean) => {
 		groupsRef.current.get(key)?.forEach((m) => (m.visible = visible));
@@ -208,6 +248,12 @@ export default function AnimPage() {
 
 		// --- skinning driven from the CMB skeleton + CSAB clips ----------------
 		const G = new Matrix4();
+			// G with the model's Z-up → three Y-up rotation baked in, used only to
+			// build the posed bone world matrices (NOT the bind inverses). Applying
+			// the rotation on just one side makes each skin matrix R·(original),
+			// which rigidly rotates the whole result upright without distorting the
+			// deformation. The world then stays Y-up so OrbitControls behaves normally.
+			const Gp = new Matrix4();
 		let restBones: RestBone[] = [];
 		let daeNumToCmb = new Map<number, number>();
 		const skeletons: Skeleton[] = [];
@@ -230,6 +276,7 @@ export default function AnimPage() {
 		const computeRest = (sk: SkeletonData) => {
 			restBones = sk.bones.slice().sort((a, b) => a.id - b.id);
 			G.fromArray(sk.G);
+			Gp.copy(G).premultiply(new Matrix4().makeRotationX(-Math.PI / 2));
 			daeNumToCmb = new Map();
 			for (const [cmbId, daeNum] of Object.entries(sk.cmbIdToDaeNum))
 				daeNumToCmb.set(daeNum, parseInt(cmbId, 10));
@@ -261,8 +308,9 @@ export default function AnimPage() {
 				for (const bone of bones) {
 					const cmbId = cmbIdOf(bone);
 					if (cmbId === undefined) continue;
-					// bone.matrixWorld = G * animatedWorld (CMB space)
-					bone.matrixWorld.multiplyMatrices(G, worldM[cmbId]);
+					// bone.matrixWorld = R * G * animatedWorld (Y-up world); pairs with
+					// the plain-G bind inverses to give skin = R·(original deformation).
+					bone.matrixWorld.multiplyMatrices(Gp, worldM[cmbId]);
 				}
 			}
 			for (const sk of skeletons) sk.update();
@@ -319,6 +367,17 @@ export default function AnimPage() {
 				if (arr) arr.push(mesh);
 				else groups.set(label, [mesh]);
 			}
+			// Grab the face mesh's material (node FACE_NODE, textured with link_e00)
+			// so the expression dropdown can swap its map. Matching by node name is
+			// reliable; the texture's image.src isn't populated yet at this point.
+			const faceMats: {mat: FaceMat; base: Texture | null}[] = [];
+			for (const mesh of skinnedMeshes) {
+				if (mesh.name !== FACE_NODE) continue;
+				const mat = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as unknown as FaceMat;
+				faceMats.push({mat, base: mat.map});
+			}
+			faceMaterialsRef.current = faceMats;
+
 			const stored = loadJsonRecord<boolean>(PARTS_KEY);
 			const storedCategory = loadJsonRecord<PartCategory>(CATEGORY_KEY);
 			setLayers(
@@ -381,6 +440,9 @@ export default function AnimPage() {
 			controls.dispose();
 			renderer.dispose();
 			renderer.domElement.remove();
+				swappedFaceTexRef.current?.dispose();
+				swappedFaceTexRef.current = null;
+				faceMaterialsRef.current = [];
 			tmp.identity();
 		};
 	}, []);
@@ -481,6 +543,23 @@ export default function AnimPage() {
 						className="w-28 cursor-pointer"
 					/>
 					<span className="w-10 tabular-nums text-white/70">{speed.toFixed(2)}×</span>
+				</label>
+				<label className="flex items-center gap-2 pr-1 text-xs">
+					<span className="text-white/70">Face</span>
+					<select
+						value={face}
+						onChange={(e) => {
+							setFace(e.target.value);
+							applyFace(e.target.value);
+						}}
+						className="cursor-pointer rounded bg-white/10 px-1.5 py-1 text-xs hover:bg-white/20"
+					>
+						{FACE_IDS.map((id) => (
+							<option key={id} value={id}>
+								{id}
+							</option>
+						))}
+					</select>
 				</label>
 			</div>
 		</div>

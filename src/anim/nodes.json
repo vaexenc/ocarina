@@ -460,7 +460,7 @@
     {
       "key": "nodes_72_",
       "visible": true,
-      "category": "active"
+      "category": "safe"
     },
     {
       "key": "nodes_73_",
@@ -520,7 +520,7 @@
     {
       "key": "nodes_84_",
       "visible": true,
-      "category": "active"
+      "category": "safe"
     },
     {
       "key": "nodes_85_",
@@ -544,7 +544,7 @@
     },
     {
       "key": "nodes_89_",
-      "visible": true,
+      "visible": false,
       "category": "active"
     },
     {
