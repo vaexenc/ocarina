@@ -40,7 +40,7 @@ const notesToDetune: Record<NoteName, number> = {
 const songMatchers = Object.entries(songs).map(([id, song]) => ({
 	id,
 	song,
-	notes: song.notes.map((note) => (typeof note === "object" ? note.note : note)).join(""),
+	notes: song.notes.join(""),
 }));
 
 export type OcarinaPlayback = {

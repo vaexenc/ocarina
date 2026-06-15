@@ -4,7 +4,7 @@ import LoadingScreen from "./components/loading-screen/LoadingScreen";
 import MetaModal from "./components/meta-modal/MetaModal";
 import SongPlayer from "./components/songs/SongPlayer";
 import {AudioBuffers, AudioSystem, SettingValues, Song} from "./types";
-import {saveSettings} from "./util/user-settings/user-settings";
+import {markHasPlayed, saveSettings} from "./util/user-settings/user-settings";
 import {createAudioSystem, playSound} from "./util/audio";
 import {checkIfMobileDevice} from "./util/util";
 
@@ -41,8 +41,10 @@ function App({
 	const onSongCorrect = useCallback(
 		(songId: string, songData: Song) => {
 			playSound(audioSystem, audioBuffers.current["song-correct"], {gain: 0.5});
+			// A song using the A note proves the player has found the A control, so we can stop
+			// hinting the controls on future visits.
 			if (songData.notes.includes("a")) {
-				localStorage.setItem("ocarina.hasPlayedBefore", "1");
+				markHasPlayed();
 			}
 			setCurrentSongId(songId);
 		},

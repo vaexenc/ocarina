@@ -4,12 +4,11 @@ export type SvgComponent = FunctionComponent<SVGProps<SVGSVGElement> & {title?: 
 
 export type NoteName = "u" | "d" | "l" | "r" | "a";
 export type NoteObject = {note: NoteName; id: number | string; isFlashing?: true};
-export type Note = NoteName | NoteObject;
 export type Color = `#${string}`;
 export type Song = {
 	readonly name: string;
 	readonly color: Color;
-	readonly notes: readonly Note[];
+	readonly notes: readonly NoteName[];
 	readonly omitThe?: boolean;
 };
 export type Songs = Readonly<Record<string, Readonly<Song>>>;

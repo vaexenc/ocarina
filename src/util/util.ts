@@ -40,9 +40,7 @@ export class FetchError extends Error {
 	}
 }
 
-export type FetchAssetOptions<T> = {
-	/** Turns the successful response into the desired value. Defaults to `response.arrayBuffer()`. */
-	parse?: (response: Response) => Promise<T>;
+export type FetchAssetOptions = {
 	/** Total number of attempts before giving up (including the first). */
 	maxAttempts?: number;
 	/** Delay before the first retry, in ms. Doubles each attempt up to `maxDelay`. */
@@ -64,24 +62,16 @@ function isRetryableStatus(status: number) {
 }
 
 /**
- * Fetches a single asset with bounded, exponential-backoff retries.
+ * Fetches a single asset as an `ArrayBuffer` with bounded, exponential-backoff retries.
  *
- * Generic over the parsed result: by default it resolves to an `ArrayBuffer`, but pass a
- * `parse` callback to load JSON, text, blobs, etc. Rejects with a `FetchError` once the
- * attempts are exhausted, or with an `AbortError` if `signal` is aborted.
+ * Rejects with a `FetchError` once the attempts are exhausted, or with an `AbortError` if
+ * `signal` is aborted.
  */
-export async function fetchAsset<T = ArrayBuffer>(
+export async function fetchAsset(
 	url: string,
-	options: FetchAssetOptions<T> = {}
-): Promise<T> {
-	const {
-		parse = (response: Response) => response.arrayBuffer() as Promise<T>,
-		maxAttempts = 5,
-		baseDelay = 1000,
-		maxDelay = 15000,
-		timeout = 20000,
-		signal,
-	} = options;
+	options: FetchAssetOptions = {}
+): Promise<ArrayBuffer> {
+	const {maxAttempts = 5, baseDelay = 1000, maxDelay = 15000, timeout = 20000, signal} = options;
 
 	for (let attempt = 0; attempt < maxAttempts; attempt++) {
 		if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
@@ -99,7 +89,7 @@ export async function fetchAsset<T = ArrayBuffer>(
 					response.status
 				);
 			}
-			return await parse(response);
+			return await response.arrayBuffer();
 		} catch (error) {
 			// The caller asked to stop; surface it instead of retrying.
 			if (signal?.aborted) throw new DOMException("Aborted", "AbortError");

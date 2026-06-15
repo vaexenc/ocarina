@@ -16,7 +16,6 @@ const soundsToFetch = [
 		return {id: song[0], url: "audio/songs/" + song[0] + ".ogg"};
 	}),
 	{id: "ocarina", url: "audio/ocarina.ogg"},
-	// {id: "start", url: "audio/start.ogg"},
 	{id: "song-correct", url: "audio/song-correct.ogg"},
 	{id: "confirm", url: "audio/confirm.ogg"},
 	{id: "menu-open", url: "audio/menu-open.ogg"},
@@ -84,16 +83,18 @@ export default function LoadingScreen({
 	onClose: () => void;
 	showControls: boolean;
 }) {
-	const [progress, setProgress] = useState(0);
+	const [loadedCount, setLoadedCount] = useState(0);
 	const [failedCount, setFailedCount] = useState(0);
 	const [visible, setVisible] = useState(true);
 	const [isFadingOut, setIsFadingOut] = useState(false);
 
 	const updateProgress = useCallback(() => {
-		setProgress((progress) => progress + 100 / progressTotalAmount);
+		setLoadedCount((count) => count + 1);
 	}, []);
 
-	const progressModified = progress > 99.99 ? 100 : progress; // snap past float drift to a clean 100
+	// Counting completed steps and deriving the percentage avoids float drift, so this hits
+	// exactly 100 when everything has loaded.
+	const progressModified = (loadedCount / progressTotalAmount) * 100;
 
 	useEffect(() => {
 		const controller = new AbortController();

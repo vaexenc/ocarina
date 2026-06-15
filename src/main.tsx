@@ -3,14 +3,17 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./styles/main.css";
-import {deleteSettings, loadSettings} from "./util/user-settings/user-settings";
-
-const HAS_PLAYED_KEY = "ocarina.hasPlayedBefore";
+import {
+	deleteHasPlayed,
+	deleteSettings,
+	loadHasPlayed,
+	loadSettings,
+} from "./util/user-settings/user-settings";
 
 // `?reset` escape hatch: wipe persisted state, then strip the param. Must run before any read.
 if (new URL(window.location.href).searchParams.has("reset")) {
 	deleteSettings();
-	localStorage.removeItem(HAS_PLAYED_KEY);
+	deleteHasPlayed();
 	window.history.replaceState(
 		{},
 		document.title,
@@ -25,7 +28,7 @@ ReactDOM.createRoot(rootElement).render(
 	<React.StrictMode>
 		<App
 			initialSettings={loadSettings()}
-			hasPlayedBefore={!!localStorage.getItem(HAS_PLAYED_KEY)}
+			hasPlayedBefore={loadHasPlayed()}
 		/>
 	</React.StrictMode>
 );
