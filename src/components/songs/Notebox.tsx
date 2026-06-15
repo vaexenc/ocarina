@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import style from "./Notebox.module.scss";
 import Clef from "/src/images/clef.svg?react";
-import {noteMap} from "/src/song-data";
+import {noteMap} from "/src/note-map";
 import {Note} from "/src/types";
 
 export default function NoteBox({
