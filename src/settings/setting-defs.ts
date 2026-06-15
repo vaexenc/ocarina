@@ -6,7 +6,12 @@ import CUp from "/src/images/buttons/c-up.svg?react";
 import {KeybindId, SettingDef, SettingValues} from "/src/types";
 
 export const settingDefs: readonly SettingDef[] = [
-	{id: "volume", name: "Volume", type: "slider", default: 0.25},
+	{
+		id: "volume",
+		name: "Volume",
+		type: "slider",
+		default: 0.25,
+	},
 	{
 		id: "bgMovement",
 		name: "Background Movement",
@@ -14,7 +19,14 @@ export const settingDefs: readonly SettingDef[] = [
 		default: true,
 		hideOnMobile: true,
 	},
-	{id: "keybindA", name: "A", type: "keybind", image: A, default: "a", hideOnMobile: true},
+	{
+		id: "keybindA",
+		name: "A",
+		type: "keybind",
+		image: A,
+		default: "a",
+		hideOnMobile: true,
+	},
 	{
 		id: "keybindCUp",
 		name: "C-Up",
