@@ -1,11 +1,12 @@
 {
 	"compilerOptions": {
 		"strict": true,
+		"noEmit": true,
 		"skipLibCheck": true,
 		"module": "ESNext",
 		"moduleResolution": "bundler",
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true
 	},
-	"include": ["vite.config.ts", "inject-html-plugin.ts"]
+	"include": ["vite.config.ts"]
 }

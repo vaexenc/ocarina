@@ -2,7 +2,10 @@ import react from "@vitejs/plugin-react-swc";
 import {defineConfig} from "vite";
 import {ViteMinifyPlugin} from "vite-plugin-minify";
 import svgr from "vite-plugin-svgr";
-import injectHtmlPlugin from "./inject-html-plugin";
+
+// Exposed to index.html as %VITE_BUILD_DATE% (UTC, "YYYY-MM-DD HH:MM:SS UTC").
+process.env.VITE_BUILD_DATE =
+	new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -23,7 +26,6 @@ export default defineConfig({
 				},
 			},
 		}),
-		injectHtmlPlugin(),
 		ViteMinifyPlugin(),
 	],
 	build: {
