@@ -60,15 +60,15 @@ export const settingFields: readonly SettingField[] = [
 		hideOnMobile: true,
 	},
 	{
-		id: "keybindBendSemiDown",
-		name: "Bend Down (Semitone)",
+		id: "keybindBendWholeDown",
+		name: "Bend Down (Whole Tone)",
 		type: "keybind",
 		default: "q",
 		hideOnMobile: true,
 	},
 	{
-		id: "keybindBendWholeUp",
-		name: "Bend Up (Whole Tone)",
+		id: "keybindBendSemiDown",
+		name: "Bend Down (Semitone)",
 		type: "keybind",
 		default: "w",
 		hideOnMobile: true,
@@ -81,10 +81,10 @@ export const settingFields: readonly SettingField[] = [
 		hideOnMobile: true,
 	},
 	{
-		id: "keybindBendWholeDown",
-		name: "Bend Down (Whole Tone)",
+		id: "keybindBendWholeUp",
+		name: "Bend Up (Whole Tone)",
 		type: "keybind",
-		default: "s",
+		default: "r",
 		hideOnMobile: true,
 	},
 	{

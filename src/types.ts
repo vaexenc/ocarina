@@ -39,17 +39,18 @@ export type SettingValues = {
 	keybindVibrato: string;
 };
 export type SettingId = keyof SettingValues;
-export type KeybindId =
+export type NoteKeybindId =
 	| "keybindA"
 	| "keybindCUp"
 	| "keybindCDown"
 	| "keybindCLeft"
-	| "keybindCRight"
+	| "keybindCRight";
+export type BendKeybindId =
 	| "keybindBendWholeDown"
 	| "keybindBendSemiDown"
 	| "keybindBendSemiUp"
-	| "keybindBendWholeUp"
-	| "keybindVibrato";
+	| "keybindBendWholeUp";
+export type KeybindId = NoteKeybindId | BendKeybindId | "keybindVibrato";
 
 // The static metadata describing how each setting is rendered, in display order.
 // Discriminating on `type` narrows `id`, which in turn types the value lookup, so

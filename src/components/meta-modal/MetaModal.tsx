@@ -36,20 +36,76 @@ function ModalTrigger({onClick}: {onClick: React.MouseEventHandler<HTMLButtonEle
 	);
 }
 
+// A collapsible group of settings whose open/closed state is owned by the caller, so it survives
+// the modal being closed and reopened.
+function Collapse({
+	title,
+	isOpen,
+	onToggle,
+	hidden,
+	children,
+}: {
+	title: string;
+	isOpen: boolean;
+	onToggle: () => void;
+	hidden?: boolean;
+	children: React.ReactNode;
+}) {
+	return (
+		<div className={clsx({hidden})}>
+			<button
+				className={clsx(settingClass, "cursor-pointer")}
+				onClick={onToggle}
+				aria-expanded={isOpen}
+			>
+				<div className="mr-[1.5em]">{title}</div>
+				<svg
+					className={clsx(
+						"h-[0.6em] w-auto transition-transform duration-300",
+						isOpen && "rotate-180"
+					)}
+					viewBox="0 0 12 8"
+					fill="none"
+				>
+					<path
+						d="M1 1l5 5 5-5"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+				</svg>
+			</button>
+			<div
+				className={clsx(
+					"grid transition-[grid-template-rows] duration-300",
+					isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+				)}
+			>
+				<div className="overflow-hidden">{children}</div>
+			</div>
+		</div>
+	);
+}
+
 function SettingControl({
 	settings,
 	changeSetting,
 	currentKeybindId,
 	setCurrentKeybindId,
 	isMobile,
+	keybindsOpen,
+	setKeybindsOpen,
 }: {
 	settings: SettingValues;
 	changeSetting: ChangeSetting;
 	currentKeybindId: KeybindId | null;
 	setCurrentKeybindId: React.Dispatch<React.SetStateAction<KeybindId | null>>;
 	isMobile: boolean;
+	keybindsOpen: boolean;
+	setKeybindsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-	return settingFields.map((field) => {
+	const renderField = (field: (typeof settingFields)[number]) => {
 		const hidden = isMobile && field.hideOnMobile;
 
 		switch (field.type) {
@@ -102,7 +158,24 @@ function SettingControl({
 			default:
 				return assertNever(field);
 		}
-	});
+	};
+
+	const keybindFields = settingFields.filter((field) => field.type === "keybind");
+	const otherFields = settingFields.filter((field) => field.type !== "keybind");
+
+	return (
+		<>
+			{otherFields.map(renderField)}
+			<Collapse
+				title="Keybinds"
+				isOpen={keybindsOpen}
+				onToggle={() => setKeybindsOpen((prev) => !prev)}
+				hidden={isMobile && keybindFields.every((field) => field.hideOnMobile)}
+			>
+				{keybindFields.map(renderField)}
+			</Collapse>
+		</>
+	);
 }
 
 function ModalInfo({isMobile}: {isMobile: boolean}) {
@@ -201,6 +274,8 @@ function Modal({
 	currentKeybindId,
 	setCurrentKeybindId,
 	isMobile,
+	keybindsOpen,
+	setKeybindsOpen,
 }: {
 	isOpen: boolean;
 	onClose: () => void;
@@ -209,6 +284,8 @@ function Modal({
 	currentKeybindId: KeybindId | null;
 	setCurrentKeybindId: React.Dispatch<React.SetStateAction<KeybindId | null>>;
 	isMobile: boolean;
+	keybindsOpen: boolean;
+	setKeybindsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
 	const close = () => {
 		setCurrentKeybindId(null);
@@ -244,6 +321,8 @@ function Modal({
 							currentKeybindId={currentKeybindId}
 							setCurrentKeybindId={setCurrentKeybindId}
 							isMobile={isMobile}
+							keybindsOpen={keybindsOpen}
+							setKeybindsOpen={setKeybindsOpen}
 						/>
 					</div>
 					<ModalInfo isMobile={isMobile} />
@@ -269,6 +348,8 @@ export default function MetaModal({
 	isMobile: boolean;
 }) {
 	const [currentKeybindId, setCurrentKeybindId] = useState<KeybindId | null>(null);
+	// Owned here (not inside the always-rendered Modal's collapsed body) so it survives close/reopen.
+	const [keybindsOpen, setKeybindsOpen] = useState(false);
 
 	const changeSetting = useCallback<ChangeSetting>(
 		(id, value) => {
@@ -312,6 +393,8 @@ export default function MetaModal({
 				currentKeybindId={currentKeybindId}
 				setCurrentKeybindId={setCurrentKeybindId}
 				isMobile={isMobile}
+				keybindsOpen={keybindsOpen}
+				setKeybindsOpen={setKeybindsOpen}
 			/>
 		</>
 	);

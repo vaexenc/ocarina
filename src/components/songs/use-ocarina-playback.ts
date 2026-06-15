@@ -3,13 +3,14 @@ import {songs} from "/src/data/song-data";
 import {
 	AudioBuffers,
 	AudioSystem,
-	KeybindId,
+	NoteKeybindId,
 	NoteName,
 	NoteObject,
 	SettingValues,
 	Song,
 } from "/src/types";
 import {createSound, fadeOutSource, playSound} from "/src/util/audio";
+import {usePitchModifiers} from "./use-pitch-modifiers";
 
 const songStartDelay = 800;
 const canCancelDelay = 500;
@@ -18,10 +19,7 @@ const ocarinaFadeDuration = 0.3;
 const songStartOcarinaFadeoutDelay = -100;
 const maxVisibleNotes = 8; // the longest song is 8 notes, so the box never needs to show more
 
-const keybindsToNotes: Record<
-	"keybindA" | "keybindCUp" | "keybindCDown" | "keybindCLeft" | "keybindCRight",
-	NoteName
-> = {
+const keybindsToNotes: Record<NoteKeybindId, NoteName> = {
 	keybindA: "a",
 	keybindCUp: "u",
 	keybindCDown: "d",
@@ -37,22 +35,6 @@ const notesToDetune: Record<NoteName, number> = {
 	"l": 300, // b
 	"u": 600, // d
 };
-
-// Ocarina of Time-style pitch bending: each rebindable bend key offsets the note's pitch by the
-// given number of cents while held. A note bent this way can't be part of a song match.
-const bendKeybindCents: Record<
-	"keybindBendWholeDown" | "keybindBendSemiDown" | "keybindBendSemiUp" | "keybindBendWholeUp",
-	number
-> = {
-	keybindBendWholeDown: -200,
-	keybindBendSemiDown: -100,
-	keybindBendSemiUp: 100,
-	keybindBendWholeUp: 200,
-};
-
-// Vibrato is purely an audio effect — it does not affect matching.
-const vibratoRateHz = 6;
-const vibratoDepthCents = 35;
 
 // A non-note sentinel that a bent note contributes to the played sequence, so it can never be
 // part of (or bridge) a matched song, which contain only real note letters.
@@ -77,6 +59,7 @@ export type OcarinaPlayback = {
 /**
  * The imperative ocarina engine: input handling, song-match detection, playback scheduling,
  * and the WebAudio node lifecycle. Owns all the mutable refs so the component stays declarative.
+ * Pitch bend and vibrato live in {@link usePitchModifiers}, which acts on the live note here.
  *
  * `matchedSongId`/`matchedSong` are the single source of truth for the currently playing song;
  * the consumer reports them upward via `onSongCorrect`/`onSongEnd` rather than feeding state back.
@@ -110,109 +93,22 @@ export function useOcarinaPlayback({
 	const currentNote = useRef<NoteName | null>(null);
 	const playbackTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-	// Live input modifiers. `heldNotes` tracks which note keys are physically down so we know a
-	// note is currently sounding; bend/vibrato keys only act in that case. Their keys never
-	// overlap a note keybind, so keyup can tell them apart by the key alone.
-	const heldNotes = useRef<Set<string>>(new Set());
-	const activeBends = useRef<Map<string, number>>(new Map());
-	const vibratoActive = useRef(false);
-	const vibratoOsc = useRef<OscillatorNode | null>(null);
-	const vibratoDepth = useRef<GainNode | null>(null);
-
 	const convolverRef = useRef<ConvolverNode | null>(null);
 	const convolver = (convolverRef.current ??= audioSystem.context.createConvolver());
 
 	// Maps each configured key to the note it plays, for O(1) lookup on keydown.
 	const keyToNote = useMemo(() => {
 		const map = new Map<string, NoteName>();
-		(Object.entries(keybindsToNotes) as [KeybindId, NoteName][]).forEach(([id, note]) => {
+		(Object.entries(keybindsToNotes) as [NoteKeybindId, NoteName][]).forEach(([id, note]) => {
 			map.set(settings[id], note);
 		});
 		return map;
 	}, [settings]);
 
-	// Maps each configured bend key to its cent offset, mirroring `keyToNote`.
-	const keyToBendCents = useMemo(() => {
-		const map = new Map<string, number>();
-		(Object.entries(bendKeybindCents) as [keyof typeof bendKeybindCents, number][]).forEach(
-			([id, cents]) => map.set(settings[id], cents)
-		);
-		return map;
-	}, [settings]);
-
-	const vibratoKey = settings.keybindVibrato;
-
 	const clearPlaybackTimeouts = useCallback(() => {
 		playbackTimeouts.current.forEach(clearTimeout);
 		playbackTimeouts.current = [];
 	}, []);
-
-	const currentBendCents = useCallback(() => {
-		let sum = 0;
-		for (const cents of activeBends.current.values()) sum += cents;
-		return sum;
-	}, []);
-
-	// Push the current bend (plus the note's base detune) onto the sounding source. The vibrato
-	// LFO, when connected, adds its oscillation on top of this intrinsic value.
-	const applyDetune = useCallback(() => {
-		const source = currentOcarinaSource.current;
-		const note = currentNote.current;
-		if (!source || !note) return;
-		source.detune.setValueAtTime(
-			notesToDetune[note] + currentBendCents(),
-			audioSystem.context.currentTime
-		);
-	}, [audioSystem, currentBendCents]);
-
-	const disconnectVibrato = useCallback(() => {
-		vibratoDepth.current?.disconnect();
-	}, []);
-
-	// Route a shared, always-running LFO into the current source's detune. Created lazily so the
-	// oscillator only exists once vibrato is first used.
-	const connectVibrato = useCallback(() => {
-		const ctx = audioSystem.context;
-		if (!vibratoOsc.current) {
-			const osc = ctx.createOscillator();
-			osc.frequency.value = vibratoRateHz;
-			const depth = ctx.createGain();
-			depth.gain.value = vibratoDepthCents;
-			osc.connect(depth);
-			osc.start();
-			vibratoOsc.current = osc;
-			vibratoDepth.current = depth;
-		}
-		const source = currentOcarinaSource.current;
-		if (source && vibratoDepth.current) {
-			vibratoDepth.current.disconnect();
-			vibratoDepth.current.connect(source.detune);
-		}
-	}, [audioSystem]);
-
-	// Mark the sounding (most recently added) note as bent, excluding it from song matching.
-	const markCurrentNoteBent = useCallback(() => {
-		setNotes((prev) =>
-			prev.length === 0
-				? prev
-				: prev.map((note, i) => (i === prev.length - 1 ? {...note, isBent: true} : note))
-		);
-	}, []);
-
-	const resetModifiers = useCallback(() => {
-		heldNotes.current.clear();
-		activeBends.current.clear();
-		vibratoActive.current = false;
-		disconnectVibrato();
-	}, [disconnectVibrato]);
-
-	const resetPlayback = useCallback(() => {
-		clearPlaybackTimeouts();
-		resetModifiers();
-		setNotes([]);
-		setMatched(null);
-		setPlayerState("notPlaying");
-	}, [clearPlaybackTimeouts, resetModifiers]);
 
 	const fadeOutOcarina = useCallback(() => {
 		if (currentOcarinaSource.current && currentOcarinaGain.current) {
@@ -234,6 +130,33 @@ export function useOcarinaPlayback({
 		});
 	}, []);
 
+	// Mark the sounding (most recently added) note as bent, excluding it from song matching.
+	const markCurrentNoteBent = useCallback(() => {
+		setNotes((prev) =>
+			prev.length === 0
+				? prev
+				: prev.map((note, i) => (i === prev.length - 1 ? {...note, isBent: true} : note))
+		);
+	}, []);
+
+	const {
+		bendCents,
+		isBendActive,
+		attachToSource,
+		detach: detachModifiers,
+		handleKeyDown: handleModifierKeyDown,
+		handleKeyUp: handleModifierKeyUp,
+		reset: resetModifiers,
+	} = usePitchModifiers({audioSystem, settings, onBendLiveNote: markCurrentNoteBent});
+
+	const resetPlayback = useCallback(() => {
+		clearPlaybackTimeouts();
+		resetModifiers();
+		setNotes([]);
+		setMatched(null);
+		setPlayerState("notPlaying");
+	}, [clearPlaybackTimeouts, resetModifiers]);
+
 	const inputPress = useCallback(
 		(note: NoteName) => {
 			if (!isInputEnabled) return;
@@ -247,8 +170,7 @@ export function useOcarinaPlayback({
 
 			// A note carries any bend that's active the instant it starts (e.g. a bend key held
 			// over from the previous note). Vibrato never affects matching, so it's not counted.
-			const isBent = activeBends.current.size > 0;
-			addNote(note, isBent);
+			addNote(note, isBendActive());
 
 			fadeOutOcarina();
 			const sound = playSound(audioSystem, audioBuffers.current.ocarina, {
@@ -256,15 +178,15 @@ export function useOcarinaPlayback({
 				loop: true,
 				loopStart: 0.47,
 				loopEnd: 0.7163,
-				detune: notesToDetune[note] + currentBendCents(),
+				detune: notesToDetune[note] + bendCents(),
 				extraDestination: convolver,
 			});
 			if (sound) {
 				currentOcarinaSource.current = sound.source;
 				currentOcarinaGain.current = sound.gain;
+				attachToSource(sound.source, notesToDetune[note]);
 			}
 			currentNote.current = note;
-			if (vibratoActive.current) connectVibrato();
 		},
 		[
 			isInputEnabled,
@@ -276,8 +198,9 @@ export function useOcarinaPlayback({
 			audioSystem,
 			audioBuffers,
 			convolver,
-			currentBendCents,
-			connectVibrato,
+			isBendActive,
+			bendCents,
+			attachToSource,
 		]
 	);
 
@@ -285,9 +208,10 @@ export function useOcarinaPlayback({
 		(note: NoteName) => {
 			if (note !== currentNote.current) return;
 			if (playerState === "playing") return;
+			detachModifiers();
 			fadeOutOcarina();
 		},
-		[playerState, fadeOutOcarina]
+		[playerState, fadeOutOcarina, detachModifiers]
 	);
 
 	const playMatchedSong = useCallback(
@@ -340,52 +264,24 @@ export function useOcarinaPlayback({
 	}, [notes, playerState, playMatchedSong]);
 
 	useEffect(() => {
-		// Bend/vibrato keys stay "armed" while held: pressing one applies to the sounding note
-		// (if any) immediately, and `inputPress` re-applies the armed state to each new note so a
-		// pre-held key bends/vibratos notes played afterwards too. `heldNotes` only gates the
-		// "mark the current note bent" step, so an idle press never taints an already-finished note.
+		// Bend/vibrato keys are handled first and, when consumed, never fall through to note input.
+		// Input gating mirrors the note path (no presses while the modal or loading screen is up),
+		// while releases always run so held keys can't get stuck once input is re-enabled.
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.repeat) return;
+			if (!isInputEnabled) return;
 
-			const cents = keyToBendCents.get(event.key);
-			if (cents !== undefined) {
-				event.preventDefault();
-				activeBends.current.set(event.key, cents);
-				applyDetune();
-				if (heldNotes.current.size > 0) markCurrentNoteBent();
-				return;
-			}
-			if (event.key === vibratoKey) {
-				event.preventDefault();
-				vibratoActive.current = true;
-				connectVibrato();
-				return;
-			}
+			if (handleModifierKeyDown(event)) return;
 
 			const note = keyToNote.get(event.key);
-			if (note) {
-				heldNotes.current.add(event.key);
-				inputPress(note);
-			}
+			if (note) inputPress(note);
 		};
 
 		const handleKeyUp = (event: KeyboardEvent) => {
-			if (keyToBendCents.has(event.key)) {
-				activeBends.current.delete(event.key);
-				applyDetune();
-				return;
-			}
-			if (event.key === vibratoKey) {
-				vibratoActive.current = false;
-				disconnectVibrato();
-				return;
-			}
+			if (handleModifierKeyUp(event)) return;
 
 			const note = keyToNote.get(event.key);
-			if (note) {
-				heldNotes.current.delete(event.key);
-				inputRelease(note);
-			}
+			if (note) inputRelease(note);
 		};
 
 		window.addEventListener("keydown", handleKeyDown);
@@ -396,15 +292,12 @@ export function useOcarinaPlayback({
 			window.removeEventListener("keyup", handleKeyUp);
 		};
 	}, [
+		isInputEnabled,
 		keyToNote,
-		keyToBendCents,
-		vibratoKey,
 		inputPress,
 		inputRelease,
-		applyDetune,
-		connectVibrato,
-		disconnectVibrato,
-		markCurrentNoteBent,
+		handleModifierKeyDown,
+		handleModifierKeyUp,
 	]);
 
 	useEffect(() => {
@@ -418,15 +311,6 @@ export function useOcarinaPlayback({
 	}, [isReady, convolver, audioBuffers, audioSystem]);
 
 	useEffect(() => clearPlaybackTimeouts, [clearPlaybackTimeouts]);
-
-	useEffect(
-		() => () => {
-			vibratoOsc.current?.stop();
-			vibratoOsc.current = null;
-			vibratoDepth.current = null;
-		},
-		[]
-	);
 
 	return {
 		notes,
