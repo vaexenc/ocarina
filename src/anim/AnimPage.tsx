@@ -34,28 +34,27 @@ function meshLabel(mesh: SkinnedMesh): string {
 	return m ? m[1] : mesh.name || "mesh";
 }
 
+// Parts are sorted into organizational categories. The category is just a tag —
+// it does not affect visibility, which is toggled independently per part.
+type PartCategory = "active" | "safe" | "deleted";
+// Display order of the category groups in the Parts panel.
+const CATEGORIES: PartCategory[] = ["safe", "active", "deleted"];
+
 interface Layer {
 	key: string;
 	count: number;
 	visible: boolean;
-	// "Deleted" parts are parked in a separate category and forced hidden in the
-	// scene, regardless of their `visible` flag, until moved back.
-	deleted: boolean;
-}
-
-// A part's meshes are shown only when it's visible and not deleted.
-function effectiveVisible(l: Pick<Layer, "visible" | "deleted">): boolean {
-	return l.visible && !l.deleted;
+	category: PartCategory;
 }
 
 const PARTS_KEY = "ocarina.animPartsVisibility";
-const DELETED_KEY = "ocarina.animPartsDeleted";
+const CATEGORY_KEY = "ocarina.animPartsCategory";
 
-function loadStringBoolMap(storageKey: string): Record<string, boolean> {
+function loadJsonRecord<T>(storageKey: string): Record<string, T> {
 	const raw = localStorage.getItem(storageKey);
 	if (!raw) return {};
 	try {
-		return JSON.parse(raw) as Record<string, boolean>;
+		return JSON.parse(raw) as Record<string, T>;
 	} catch {
 		return {};
 	}
@@ -63,13 +62,13 @@ function loadStringBoolMap(storageKey: string): Record<string, boolean> {
 
 function savePartsState(layers: Layer[]) {
 	const visibility: Record<string, boolean> = {};
-	const deleted: Record<string, boolean> = {};
+	const category: Record<string, PartCategory> = {};
 	for (const l of layers) {
 		visibility[l.key] = l.visible;
-		if (l.deleted) deleted[l.key] = true;
+		if (l.category !== "active") category[l.key] = l.category;
 	}
 	localStorage.setItem(PARTS_KEY, JSON.stringify(visibility));
-	localStorage.setItem(DELETED_KEY, JSON.stringify(deleted));
+	localStorage.setItem(CATEGORY_KEY, JSON.stringify(category));
 }
 
 const PARTS_FILE_TYPE = "ocarina-anim-parts";
@@ -77,18 +76,20 @@ const PARTS_FILE_TYPE = "ocarina-anim-parts";
 interface PartEntry {
 	key: string;
 	visible: boolean;
-	deleted: boolean;
+	category: PartCategory;
+	// Legacy field from earlier exports; mapped to category "deleted" on import.
+	deleted?: boolean;
 }
 
-// JSON dump of the current visibility + deleted state, for saving/sharing and
+// JSON dump of the current visibility + category state, for saving/sharing and
 // re-importing later.
 function partsToJson(layers: Layer[]): string {
-	const parts: PartEntry[] = layers.map((l) => ({key: l.key, visible: l.visible, deleted: l.deleted}));
-	return JSON.stringify({type: PARTS_FILE_TYPE, version: 1, parts}, null, 2);
+	const parts: PartEntry[] = layers.map((l) => ({key: l.key, visible: l.visible, category: l.category}));
+	return JSON.stringify({type: PARTS_FILE_TYPE, version: 2, parts}, null, 2);
 }
 
-// Pull a key -> {visible, deleted} map out of an imported file. Accepts both the
-// wrapped {type, parts} shape and a bare array of part entries.
+// Pull a key -> entry map out of an imported file. Accepts both the wrapped
+// {type, parts} shape and a bare array of part entries.
 function parsePartsJson(text: string): Map<string, Partial<PartEntry>> {
 	const data = JSON.parse(text) as unknown;
 	const parts = Array.isArray(data) ? data : (data as {parts?: unknown})?.parts;
@@ -122,34 +123,17 @@ export default function AnimPage() {
 	const groupsRef = useRef<Map<string, SkinnedMesh[]>>(new Map());
 
 	const setLayerVisible = (key: string, visible: boolean) => {
-		setLayers((prev) =>
-			prev.map((l) => {
-				if (l.key !== key) return l;
-				const next = {...l, visible};
-				groupsRef.current.get(key)?.forEach((m) => (m.visible = effectiveVisible(next)));
-				return next;
-			})
-		);
+		groupsRef.current.get(key)?.forEach((m) => (m.visible = visible));
+		setLayers((prev) => prev.map((l) => (l.key === key ? {...l, visible} : l)));
 	};
 	const setAllVisible = (visible: boolean) => {
-		setLayers((prev) =>
-			prev.map((l) => {
-				if (l.deleted) return l; // leave parked parts hidden
-				groupsRef.current.get(l.key)?.forEach((m) => (m.visible = visible));
-				return {...l, visible};
-			})
-		);
+		groupsRef.current.forEach((ms) => ms.forEach((m) => (m.visible = visible)));
+		setLayers((prev) => prev.map((l) => ({...l, visible})));
 	};
-	// Move a part into / out of the "deleted" category.
-	const setLayerDeleted = (key: string, deleted: boolean) => {
-		setLayers((prev) =>
-			prev.map((l) => {
-				if (l.key !== key) return l;
-				const next = {...l, deleted};
-				groupsRef.current.get(key)?.forEach((m) => (m.visible = effectiveVisible(next)));
-				return next;
-			})
-		);
+	// Move a part into another category (purely organizational; does not affect
+	// visibility).
+	const setLayerCategory = (key: string, category: PartCategory) => {
+		setLayers((prev) => prev.map((l) => (l.key === key ? {...l, category} : l)));
 	};
 
 	// Persist visibility + deleted state whenever it changes (skips the initial
@@ -175,9 +159,10 @@ export default function AnimPage() {
 				prev.map((l) => {
 					const p = incoming.get(l.key);
 					if (!p) return l;
-					const next = {...l, visible: p.visible ?? l.visible, deleted: p.deleted ?? l.deleted};
-					groupsRef.current.get(l.key)?.forEach((m) => (m.visible = effectiveVisible(next)));
-					return next;
+					const visible = p.visible ?? l.visible;
+					const category = p.category ?? (p.deleted ? "deleted" : l.category);
+					groupsRef.current.get(l.key)?.forEach((m) => (m.visible = visible));
+					return {...l, visible, category};
 				})
 			);
 		} catch (e) {
@@ -331,15 +316,15 @@ export default function AnimPage() {
 				if (arr) arr.push(mesh);
 				else groups.set(label, [mesh]);
 			}
-			const stored = loadStringBoolMap(PARTS_KEY);
-			const storedDeleted = loadStringBoolMap(DELETED_KEY);
+			const stored = loadJsonRecord<boolean>(PARTS_KEY);
+			const storedCategory = loadJsonRecord<PartCategory>(CATEGORY_KEY);
 			setLayers(
 				[...groups.entries()]
 					.map(([key, ms]) => {
 						const visible = stored[key] ?? true;
-						const deleted = storedDeleted[key] ?? false;
-						for (const m of ms) m.visible = effectiveVisible({visible, deleted});
-						return {key, count: ms.length, visible, deleted};
+						const category = storedCategory[key] ?? "active";
+						for (const m of ms) m.visible = visible;
+						return {key, count: ms.length, visible, category};
 					})
 					.sort((a, b) => a.key.localeCompare(b.key))
 			);
@@ -404,7 +389,7 @@ export default function AnimPage() {
 			{status && <p className="absolute left-4 top-4 text-sm text-amber-300">{status}</p>}
 
 			{layers.length > 0 && (
-				<div className="absolute right-4 top-4 flex max-h-[85vh] w-52 flex-col rounded-lg bg-black/50 text-sm backdrop-blur">
+				<div className="absolute right-4 top-4 flex max-h-[85vh] w-80 flex-col rounded-lg bg-black/50 text-sm backdrop-blur">
 					<div className="flex items-center justify-between px-3 py-2">
 						<span className="font-semibold">Parts</span>
 						<span className="flex gap-1">
@@ -435,53 +420,42 @@ export default function AnimPage() {
 						</span>
 					</div>
 					<div className="flex flex-col overflow-y-auto px-3 pb-2">
-						{layers
-							.filter((l) => !l.deleted)
-							.map((l) => (
-								<div key={l.key} className="group flex items-center gap-2 py-0.5">
-									<label className="flex flex-1 cursor-pointer items-center gap-2 truncate hover:text-white/70">
-										<input
-											type="checkbox"
-											checked={l.visible}
-											onChange={(e) => setLayerVisible(l.key, e.target.checked)}
-										/>
-										<span className="truncate">
-											{l.key}
-											{l.count > 1 ? ` (${l.count})` : ""}
-										</span>
-									</label>
-									<button
-										onClick={() => setLayerDeleted(l.key, true)}
-										title="move to deleted"
-										className="text-xs text-white/30 hover:text-red-400 group-hover:text-white/60"
-									>
-										✕
-									</button>
-								</div>
-							))}
-
-						{layers.some((l) => l.deleted) && (
-							<div className="mt-2 border-t border-white/10 pt-2">
-								<div className="mb-1 text-xs font-semibold text-white/50">Deleted</div>
-								{layers
-									.filter((l) => l.deleted)
-									.map((l) => (
+						{CATEGORIES.map((cat) => ({cat, items: layers.filter((l) => l.category === cat)}))
+							.filter(({items}) => items.length > 0)
+							.map(({cat, items}, i) => (
+								<div key={cat} className={i === 0 ? "" : "mt-2 border-t border-white/10 pt-2"}>
+									<div className="mb-1 text-xs font-semibold uppercase tracking-wide text-white/50">
+										{cat}
+									</div>
+									{items.map((l) => (
 										<div key={l.key} className="flex items-center gap-2 py-0.5">
-											<span className="flex-1 truncate text-white/40 line-through">
-												{l.key}
-												{l.count > 1 ? ` (${l.count})` : ""}
+											<label className="flex flex-1 cursor-pointer items-center gap-2 truncate hover:text-white/70">
+												<input
+													type="checkbox"
+													checked={l.visible}
+													onChange={(e) => setLayerVisible(l.key, e.target.checked)}
+												/>
+												<span className="truncate">
+													{l.key}
+													{l.count > 1 ? ` (${l.count})` : ""}
+												</span>
+											</label>
+											<span className="flex gap-1">
+												{CATEGORIES.filter((c) => c !== l.category).map((c) => (
+													<button
+														key={c}
+														onClick={() => setLayerCategory(l.key, c)}
+														title={`move to ${c}`}
+														className="rounded bg-white/10 px-1.5 py-0.5 text-xs text-white/60 hover:bg-white/20 hover:text-white"
+													>
+														{c}
+													</button>
+												))}
 											</span>
-											<button
-												onClick={() => setLayerDeleted(l.key, false)}
-												title="restore"
-												className="text-xs text-white/50 hover:text-emerald-400"
-											>
-												restore
-											</button>
 										</div>
 									))}
-							</div>
-						)}
+								</div>
+							))}
 					</div>
 				</div>
 			)}

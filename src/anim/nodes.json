@@ -1,601 +1,601 @@
 {
   "type": "ocarina-anim-parts",
-  "version": 1,
+  "version": 2,
   "parts": [
     {
       "key": "nodes_100_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     },
     {
       "key": "nodes_101_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_102_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_103_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_104_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_105_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_106_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_107_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_108_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_109_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_110_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_111_",
       "visible": false,
-      "deleted": true
+      "category": "deleted"
     },
     {
       "key": "nodes_112_",
       "visible": false,
-      "deleted": true
+      "category": "deleted"
     },
     {
       "key": "nodes_113_",
       "visible": false,
-      "deleted": true
+      "category": "deleted"
     },
     {
       "key": "nodes_114_",
       "visible": false,
-      "deleted": true
+      "category": "deleted"
     },
     {
       "key": "nodes_115_",
       "visible": false,
-      "deleted": true
+      "category": "deleted"
     },
     {
       "key": "nodes_116_",
       "visible": false,
-      "deleted": true
+      "category": "deleted"
     },
     {
       "key": "nodes_117_",
       "visible": false,
-      "deleted": true
+      "category": "deleted"
     },
     {
       "key": "nodes_118_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_119_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_120_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_121_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_122_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_123_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_124_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_125_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_126_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_127_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_128_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_129_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     },
     {
       "key": "nodes_130_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_131_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_132_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_133_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_134_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_135_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     },
     {
       "key": "nodes_136_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     },
     {
       "key": "nodes_137_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     },
     {
       "key": "nodes_138_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     },
     {
       "key": "nodes_139_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     },
     {
       "key": "nodes_140_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     },
     {
       "key": "nodes_141_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     },
     {
       "key": "nodes_142_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_143_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_144_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_26_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_27_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_28_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_29_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_30_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_31_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_32_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_33_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_34_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_35_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_36_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_37_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_38_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_39_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_40_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_41_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_42_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_43_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_44_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_45_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_46_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_47_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_48_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_49_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_50_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_51_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_52_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_53_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_54_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_55_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_56_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_57_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_58_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_59_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_60_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     },
     {
       "key": "nodes_61_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_62_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_63_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_64_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_65_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_66_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_67_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_68_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_69_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_70_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_71_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_72_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "active"
     },
     {
       "key": "nodes_73_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_74_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_75_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_76_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_77_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_78_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_79_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_80_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_81_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_82_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_83_",
       "visible": false,
-      "deleted": false
+      "category": "deleted"
     },
     {
       "key": "nodes_84_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "active"
     },
     {
       "key": "nodes_85_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_86_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_87_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_88_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_89_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "active"
     },
     {
       "key": "nodes_90_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_91_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_92_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_93_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_94_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_95_",
       "visible": false,
-      "deleted": false
+      "category": "active"
     },
     {
       "key": "nodes_96_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_97_",
-      "visible": true,
-      "deleted": true
+      "visible": false,
+      "category": "deleted"
     },
     {
       "key": "nodes_98_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     },
     {
       "key": "nodes_99_",
-      "visible": false,
-      "deleted": false
+      "visible": true,
+      "category": "safe"
     }
   ]
 }
