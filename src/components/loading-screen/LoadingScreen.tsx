@@ -2,6 +2,10 @@ import clsx from "clsx";
 import Color from "color";
 import {useEffect, useMemo, useRef, useState} from "react";
 import style from "./LoadingScreen.module.scss";
+import IconKokiri from "/src/components/icons/IconKokiri";
+import IconGoron from "/src/components/icons/IconGoron";
+import IconZora from "/src/components/icons/IconZora";
+import IconTriforce from "/src/components/icons/IconTriforce";
 import {songs} from "/src/song-data";
 import {AudioBuffers, AudioSystem, UserSettings} from "/src/types";
 import {clamp, fetchSoundWithRetry, map} from "/src/util/util";
@@ -19,21 +23,26 @@ const soundsToFetch = [
 	{id: "ocarina-convolver-impulse", url: "audio/ocarina-convolver-impulse.ogg"},
 ];
 
+const stoneIcons = {
+	kokiri: IconKokiri,
+	goron: IconGoron,
+	zora: IconZora,
+};
+
 function StoneSymbol({
 	className,
 	style,
 	name,
-	iconName,
 }: {
 	className: string;
 	style: React.CSSProperties;
-	name: string;
-	iconName: string;
+	name: keyof typeof stoneIcons;
 }) {
+	const Icon = stoneIcons[name];
 	return (
 		<div className={className} style={style}>
 			<div className="animation-layer-vertical">
-				<div className={clsx("stone-symbol", name, iconName)}></div>
+				<Icon className={clsx("stone-symbol", name)} />
 			</div>
 		</div>
 	);
@@ -57,7 +66,6 @@ export default function LoadingScreen({
 	const [progress, setProgress] = useState(0);
 	const [visible, setVisible] = useState(true);
 	const [isFadingOut, setIsFadingOut] = useState(false);
-	const triforceRef = useRef<HTMLImageElement>(null);
 	const hasMainEffectRun = useRef(false); // to try to deal with StrictMode
 
 	function updateProgress() {
@@ -105,8 +113,7 @@ export default function LoadingScreen({
 						.mix(Color("#00c14f"), clamp(map(progressModified, 0, 33, 0, 1), 0, 1) * 1)
 						.hex(),
 				} as React.CSSProperties,
-				name: "kokiri",
-				iconName: "icon-kokiri",
+				name: "kokiri" as const,
 			},
 			{
 				className: clsx("stone-symbol-container", {hidden: progressModified < 33}),
@@ -115,8 +122,7 @@ export default function LoadingScreen({
 						.mix(Color("#f22700"), clamp(map(progressModified, 33, 66, 0, 1), 0, 1) * 1)
 						.hex(),
 				} as React.CSSProperties,
-				name: "goron",
-				iconName: "icon-goron",
+				name: "goron" as const,
 			},
 			{
 				className: clsx("stone-symbol-container", {hidden: progressModified < 66}),
@@ -128,8 +134,7 @@ export default function LoadingScreen({
 						)
 						.hex(),
 				} as React.CSSProperties,
-				name: "zora",
-				iconName: "icon-zora",
+				name: "zora" as const,
 			},
 		],
 		[progressModified]
@@ -179,7 +184,6 @@ export default function LoadingScreen({
 									className={v.className}
 									style={v.style}
 									name={v.name}
-									iconName={v.iconName}
 								/>
 							))}
 						</div>
@@ -197,10 +201,8 @@ export default function LoadingScreen({
 								}
 							></div>
 						</div>
-						<img
+						<IconTriforce
 							className={clsx("triforce", {"hidden": progressModified < 100})}
-							src="images/icons/triforce.svg"
-							ref={triforceRef}
 						/>
 						<div className={clsx("continue", {"hidden": progressModified < 100})}>
 							<div className={clsx("continue-inner")}>

@@ -4,6 +4,9 @@ import style from "./MetaModal.module.scss";
 import Keybind from "./keybind/Keybind";
 import RangeInput from "./range-input/RangeInput";
 import Toggle from "./toggle/Toggle";
+import IconGithub from "/src/components/icons/IconGithub";
+import IconX from "/src/components/icons/IconX";
+import IconDiscord from "/src/components/icons/IconDiscord";
 import {UserSetting, UserSettings} from "/src/types";
 
 function ModalTrigger({onClick}: {onClick: React.MouseEventHandler<HTMLButtonElement>}) {
@@ -187,21 +190,21 @@ function Modal({
 						<p>
 							Made by vaexenc{" "}
 							<a href="https://github.com/vaexenc" title="Github" target="_blank">
-								<span className="social-icon icon-github"></span>
+								<IconGithub className="social-icon" />
 							</a>
 							<a
 								href="https://twitter.com/vaexenc"
 								title="X / Twitter"
 								target="_blank"
 							>
-								<span className="social-icon icon-x"></span>
+								<IconX className="social-icon" />
 							</a>
 							<a
 								href="https://discord.com/users/vaexenc"
 								title="Discord"
 								target="_blank"
 							>
-								<span className="social-icon icon-discord"></span>
+								<IconDiscord className="social-icon" />
 							</a>
 						</p>
 					</div>

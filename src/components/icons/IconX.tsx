@@ -1,0 +1,7 @@
+export default function IconX(props: React.SVGProps<SVGSVGElement>) {
+	return (
+		<svg viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor" {...props}>
+			<path d="M2.525 32.815l395.335 528.6-397.831 429.774h89.535l348.3-376.273 281.418 376.273h304.694l-417.578-558.333 370.298-400.041h-89.535l-320.767 346.541-259.174-346.541h-304.694zM134.194 98.767h139.977l618.116 826.459h-139.977l-618.116-826.459z" />
+		</svg>
+	);
+}
