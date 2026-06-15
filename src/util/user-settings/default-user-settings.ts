@@ -5,7 +5,6 @@ import CRight from "/src/images/buttons/c-right.svg?react";
 import CUp from "/src/images/buttons/c-up.svg?react";
 import {KeybindId, SettingDef, SettingValues} from "/src/types";
 
-// The single source of truth for settings: their order, labels, controls, and defaults.
 export const settingDefs: readonly SettingDef[] = [
 	{id: "volume", name: "Volume", type: "slider", default: 0.25},
 	{
