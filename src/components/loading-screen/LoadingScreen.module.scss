@@ -36,7 +36,9 @@
 
 			.stone-symbol-container {
 				position: relative;
-				transition: opacity 0.8s, top 0.8s;
+				transition:
+					opacity 0.8s,
+					top 0.8s;
 				top: 0;
 
 				&.hidden {
@@ -124,7 +126,9 @@
 				transform: translate(-50%, calc(-50% - 30px));
 				pointer-events: none;
 				z-index: -1;
-				transition: opacity 2s 0.25s, filter 2s 0.25s;
+				transition:
+					opacity 2s 0.25s,
+					filter 2s 0.25s;
 				filter: drop-shadow(0 0 30px rgba(255, 255, 255, 1))
 					drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
 
@@ -143,7 +147,9 @@
 				background: gray;
 				z-index: 10;
 				pointer-events: none;
-				transition: opacity 0.5s, transform 0.5s;
+				transition:
+					opacity 0.5s,
+					transform 0.5s;
 
 				&.hidden {
 					opacity: 0;

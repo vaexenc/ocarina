@@ -232,16 +232,19 @@ export default function SongPlayer({
 
 					const playerId = currentPlayerId.current;
 
-					setTimeout(() => {
-						if (currentOcarinaSource.current && currentOcarinaGain.current) {
-							fadeOutSource(
-								audioSystem.current.context,
-								currentOcarinaSource.current,
-								currentOcarinaGain.current,
-								ocarinaFadeDuration
-							);
-						}
-					}, Math.max(songStartDelay + songStartOcarinaFadeoutDelay, 0));
+					setTimeout(
+						() => {
+							if (currentOcarinaSource.current && currentOcarinaGain.current) {
+								fadeOutSource(
+									audioSystem.current.context,
+									currentOcarinaSource.current,
+									currentOcarinaGain.current,
+									ocarinaFadeDuration
+								);
+							}
+						},
+						Math.max(songStartDelay + songStartOcarinaFadeoutDelay, 0)
+					);
 
 					setTimeout(() => {
 						source.start();
@@ -250,15 +253,18 @@ export default function SongPlayer({
 							setPlayerState("playingCanCancel");
 						}, canCancelDelay);
 
-						setTimeout(() => {
-							if (currentPlayerId.current !== playerId) return;
+						setTimeout(
+							() => {
+								if (currentPlayerId.current !== playerId) return;
 
-							source.stop();
-							setNotes([]);
-							setText(<span />);
-							onSongEnd();
-							setPlayerState("notPlaying");
-						}, audioBuffers.current[songId].duration * 1000 + songEndDelay);
+								source.stop();
+								setNotes([]);
+								setText(<span />);
+								onSongEnd();
+								setPlayerState("notPlaying");
+							},
+							audioBuffers.current[songId].duration * 1000 + songEndDelay
+						);
 					}, songStartDelay);
 				}
 			}

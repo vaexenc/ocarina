@@ -32,7 +32,9 @@
 	opacity: 0;
 	pointer-events: none;
 	backdrop-filter: blur(2vmax);
-	transition: opacity 0.3s, backdrop-filter 0.3s;
+	transition:
+		opacity 0.3s,
+		backdrop-filter 0.3s;
 	z-index: 101;
 
 	&--show {

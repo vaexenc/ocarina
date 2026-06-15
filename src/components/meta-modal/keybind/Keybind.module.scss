@@ -10,7 +10,9 @@
 	min-width: 2.15em;
 	box-sizing: border-box;
 	letter-spacing: 0.02em;
-	transition: background-color 0.3s, color 0.3s;
+	transition:
+		background-color 0.3s,
+		color 0.3s;
 
 	&--awaiting-input {
 		animation: glowing 2s infinite linear;

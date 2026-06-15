@@ -19,7 +19,9 @@ $transition-duration: 0.1s;
 		height: 20px;
 		transform: translateY(-50%);
 		border-radius: 99999px;
-		transition: left $transition-duration, background-color $transition-duration,
+		transition:
+			left $transition-duration,
+			background-color $transition-duration,
 			filter $transition-duration;
 	}
 

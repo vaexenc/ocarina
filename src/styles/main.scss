@@ -1,6 +1,7 @@
 @font-face {
 	font-family: "Chiaro";
-	src: url("/fonts/chiaro/chiaro-custom.woff2") format("woff2"),
+	src:
+		url("/fonts/chiaro/chiaro-custom.woff2") format("woff2"),
 		url("/fonts/chiaro/chiaro-custom.woff") format("woff"),
 		url("/fonts/chiaro/chiaro-custom.ttf") format("truetype"),
 		url("/fonts/chiaro/chiaro-custom.svg#chiarocustom") format("svg");
@@ -129,7 +130,9 @@ input[type="range"] {
 		background: white;
 		border-radius: 9999px;
 		transform: translateY(-7px);
-		transition: background-color 0.1s, filter 0.3s;
+		transition:
+			background-color 0.1s,
+			filter 0.3s;
 
 		&:hover {
 			background: #3280fe;
@@ -143,7 +146,9 @@ input[type="range"] {
 		width: 20px;
 		background: white;
 		border-radius: 9999px;
-		transition: background-color 0.1s, filter 0.3s;
+		transition:
+			background-color 0.1s,
+			filter 0.3s;
 		border: none;
 	}
 
