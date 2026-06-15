@@ -4,6 +4,7 @@ import {
 	Box3,
 	Color,
 	DirectionalLight,
+	Matrix3,
 	Matrix4,
 	PerspectiveCamera,
 	Scene,
@@ -43,6 +44,74 @@ function meshLabel(mesh: SkinnedMesh): string {
 	const src = mat?.map?.image?.src ?? mat?.map?.name ?? "";
 	const m = src.match(/([^/\\]+?)\.png/i);
 	return m ? m[1] : mesh.name || "mesh";
+}
+
+// Link's head/body is built from separate pieces (face, hair, ears…), each with
+// its own material. Where two pieces meet, their coincident vertices carry
+// independent normals computed only from their own faces, so lighting breaks
+// across the seam. This welds normals across pieces — for every group of
+// vertices sharing a position (in bind-pose world space), it averages their
+// normals and writes the result back into each piece. Same effect as Blender's
+// "Merge by Distance + Shade Smooth", but geometry and materials stay separate.
+// Requires the meshes' world matrices to be up to date (call after a bind pose +
+// scene.updateMatrixWorld).
+function weldNormals(meshes: SkinnedMesh[]) {
+	const pos = new Vector3();
+	const nrm = new Vector3();
+	const min = new Vector3(Infinity, Infinity, Infinity);
+	const max = new Vector3(-Infinity, -Infinity, -Infinity);
+
+	const usable = meshes.filter((m) => m.geometry.attributes.position && m.geometry.attributes.normal);
+	for (const mesh of usable) {
+		const p = mesh.geometry.attributes.position;
+		for (let i = 0; i < p.count; i++) {
+			pos.fromBufferAttribute(p, i).applyMatrix4(mesh.matrixWorld);
+			min.min(pos);
+			max.max(pos);
+		}
+	}
+	// Quantize positions to a grid fine enough to only catch truly coincident
+	// vertices, scaled to the model so it works regardless of unit size.
+	const inv = 1 / (max.distanceTo(min) * 1e-4 || 1);
+	const key = (v: Vector3) => `${Math.round(v.x * inv)},${Math.round(v.y * inv)},${Math.round(v.z * inv)}`;
+
+	// World-space normal matrices (and their inverses, to map averaged normals
+	// back into each mesh's local space).
+	const normalMat = new Map<SkinnedMesh, Matrix3>();
+	const invNormalMat = new Map<SkinnedMesh, Matrix3>();
+	for (const mesh of usable) {
+		const nm = new Matrix3().getNormalMatrix(mesh.matrixWorld);
+		normalMat.set(mesh, nm);
+		invNormalMat.set(mesh, nm.clone().invert());
+	}
+
+	const buckets = new Map<string, {sum: Vector3; recs: {mesh: SkinnedMesh; i: number}[]}>();
+	for (const mesh of usable) {
+		const p = mesh.geometry.attributes.position;
+		const n = mesh.geometry.attributes.normal;
+		const nm = normalMat.get(mesh)!;
+		for (let i = 0; i < p.count; i++) {
+			pos.fromBufferAttribute(p, i).applyMatrix4(mesh.matrixWorld);
+			nrm.fromBufferAttribute(n, i).applyMatrix3(nm).normalize();
+			const k = key(pos);
+			let b = buckets.get(k);
+			if (!b) buckets.set(k, (b = {sum: new Vector3(), recs: []}));
+			b.sum.add(nrm);
+			b.recs.push({mesh, i});
+		}
+	}
+
+	const out = new Vector3();
+	for (const b of buckets.values()) {
+		if (b.recs.length < 2 || b.sum.lengthSq() === 0) continue;
+		b.sum.normalize();
+		for (const {mesh, i} of b.recs) {
+			out.copy(b.sum).applyMatrix3(invNormalMat.get(mesh)!).normalize();
+			const n = mesh.geometry.attributes.normal;
+			n.setXYZ(i, out.x, out.y, out.z);
+			n.needsUpdate = true;
+		}
+	}
 }
 
 // Parts are sorted into organizational categories. The category is just a tag —
@@ -356,6 +425,11 @@ export default function AnimPage() {
 			scene.add(model);
 			applyBoneInverses();
 			pose(null, 0); // bind pose
+
+			// Smooth shading across the seams between separate head/body pieces by
+			// averaging normals at coincident vertices (needs world matrices posed).
+			scene.updateMatrixWorld(true);
+			weldNormals(skinnedMeshes);
 
 			// Group meshes by texture for the show/hide toggles, restoring any
 			// previously saved visibility from localStorage.
