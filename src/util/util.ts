@@ -92,7 +92,10 @@ export async function fetchAsset<T = ArrayBuffer>(
 		try {
 			const response = await fetch(url, {signal: controller.signal});
 			if (!response.ok) {
-				throw new FetchError(`Failed to fetch ${url}: HTTP ${response.status}`, response.status);
+				throw new FetchError(
+					`Failed to fetch ${url}: HTTP ${response.status}`,
+					response.status
+				);
 			}
 			return await parse(response);
 		} catch (error) {
@@ -100,7 +103,10 @@ export async function fetchAsset<T = ArrayBuffer>(
 			if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
 
 			const isLastAttempt = attempt === maxAttempts - 1;
-			const nonRetryable = error instanceof FetchError && error.status !== undefined && !isRetryableStatus(error.status);
+			const nonRetryable =
+				error instanceof FetchError &&
+				error.status !== undefined &&
+				!isRetryableStatus(error.status);
 			if (isLastAttempt || nonRetryable) {
 				throw error instanceof FetchError
 					? error

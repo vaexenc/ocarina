@@ -4,8 +4,7 @@ import {ViteMinifyPlugin} from "vite-plugin-minify";
 import svgr from "vite-plugin-svgr";
 
 // Exposed to index.html as %VITE_BUILD_DATE% (UTC, "YYYY-MM-DD HH:MM:SS UTC").
-process.env.VITE_BUILD_DATE =
-	new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC";
+process.env.VITE_BUILD_DATE = new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC";
 
 // https://vitejs.dev/config/
 export default defineConfig({

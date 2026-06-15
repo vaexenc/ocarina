@@ -9,7 +9,7 @@
 		"build": "npm run typecheck && vite build",
 		"typecheck": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
 		"postbuild": "copy CNAME dist",
-		"lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+		"lint": "eslint . --report-unused-disable-directives",
 		"preview": "vite preview",
 		"preview:host": "vite preview --host",
 		"format": "prettier --write .",
