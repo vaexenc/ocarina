@@ -1,3 +1,4 @@
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import {defineConfig} from "vite";
 import {ViteMinifyPlugin} from "vite-plugin-minify";
@@ -9,6 +10,7 @@ process.env.VITE_BUILD_DATE = new Date().toISOString().replace("T", " ").slice(0
 // https://vitejs.dev/config/
 export default defineConfig({
 	plugins: [
+		tailwindcss(),
 		react(),
 		svgr({
 			svgrOptions: {

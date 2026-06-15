@@ -1,5 +1,4 @@
 import clsx from "clsx";
-import style from "./MobileControls.module.scss";
 import A from "/src/images/buttons/a-simple.svg?react";
 import CUp from "/src/images/buttons/c-up-simple.svg?react";
 import CDown from "/src/images/buttons/c-down-simple.svg?react";
@@ -20,7 +19,10 @@ function Button({
 }) {
 	return (
 		<Image
-			className={clsx("button", className)}
+			className={clsx(
+				"h-auto w-(--button-size) cursor-pointer rounded-[99999px] pointer-events-auto!",
+				className
+			)}
 			onTouchStart={(e) => {
 				e.preventDefault();
 				onPress();
@@ -48,32 +50,30 @@ export default function MobileControls({
 	inputRelease: (note: NoteName) => void;
 }) {
 	return (
-		<div className={style["mobile-controls"]}>
-			<div className="a-container">
+		<div className="flex mb-[60px] isolate [--button-size:64px] [--inward-offset:calc(var(--button-size)*-0.1)]">
+			<div className="flex h-full items-end justify-end mr-[calc(var(--button-size)*-0.66)] pointer-events-none">
 				<Button
-					className="a"
 					Image={A}
 					onPress={() => inputPress("a")}
 					onRelease={() => inputRelease("a")}
 				/>
 			</div>
-			<div className="c-container">
+			<div className="flex flex-col items-center justify-center mb-[calc(var(--button-size)*0.33)] pointer-events-none">
 				<Button
-					className="c-up"
 					Image={CUp}
 					onPress={() => inputPress("u")}
 					onRelease={() => inputRelease("u")}
 				/>
 
-				<div className="c-middle-buttons">
+				<div className="flex items-center justify-center my-(--inward-offset)">
 					<Button
-						className="c-left"
+						className="mr-(--inward-offset)"
 						Image={CLeft}
 						onPress={() => inputPress("l")}
 						onRelease={() => inputRelease("l")}
 					/>
 					<Button
-						className="c-right"
+						className="ml-[calc(var(--button-size)+var(--inward-offset)*0.25)]"
 						Image={CRight}
 						onPress={() => inputPress("r")}
 						onRelease={() => inputRelease("r")}
@@ -81,7 +81,6 @@ export default function MobileControls({
 				</div>
 
 				<Button
-					className="c-down"
 					Image={CDown}
 					onPress={() => inputPress("d")}
 					onRelease={() => inputRelease("d")}

@@ -1,8 +1,6 @@
-import clsx from "clsx";
 import {useCallback, useEffect, useRef, useState} from "react";
 import MobileControls from "./MobileControls";
 import NoteBox from "./Notebox";
-import style from "./SongPlayer.module.scss";
 import SongReference from "./SongReference";
 import {songs} from "/src/song-data";
 import {
@@ -272,9 +270,9 @@ export default function SongPlayer({
 	}, [notes, onSongCorrect, audioBuffers, audioSystem, onSongEnd]);
 
 	return (
-		<div className={clsx(style["song-player"])}>
+		<div className="fixed inset-0 flex h-full w-full flex-col items-center justify-center select-none">
 			<SongReference currentSongId={currentSongId} />
-			<NoteBox className={"note-box-player"} text={text} notes={notes} />
+			<NoteBox variant="player" text={text} notes={notes} />
 			{isMobile && <MobileControls inputPress={inputPress} inputRelease={inputRelease} />}
 		</div>
 	);

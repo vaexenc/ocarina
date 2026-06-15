@@ -1,6 +1,5 @@
 import clsx from "clsx";
 import {useCallback, useEffect, useRef, useState} from "react";
-import style from "./MetaModal.module.scss";
 import Keybind from "./keybind/Keybind";
 import RangeInput from "./range-input/RangeInput";
 import Toggle from "./toggle/Toggle";
@@ -10,10 +9,23 @@ import IconDiscord from "/src/images/icons/discord.svg?react";
 import {UserSetting, UserSettings} from "/src/types";
 import {assertNever} from "/src/util/util";
 
+const settingClass =
+	"group relative flex w-full items-center justify-between rounded-[10px] bg-white/5 p-[15px_20px] mb-[15px] hover:bg-white/15 focus:bg-white/15 focus:[outline:1px_solid_rgba(255,255,255,0.5)]";
+
+const infoLinkClass = "text-[#3280fe] hover:text-[#ffbe0b] focus:text-[#ffbe0b]";
+
 function ModalTrigger({onClick}: {onClick: React.MouseEventHandler<HTMLButtonElement>}) {
 	return (
-		<button className={style["meta-modal-trigger"]} title="Settings & More" onClick={onClick}>
-			<img className="image" src="images/ocarina-small.webp" draggable={false} />
+		<button
+			className="fixed top-0 right-0 z-[100] p-[15px_15px_10px_10px] transition-transform duration-300 [filter:drop-shadow(0_0_3px_rgba(0,0,0,0.3))_drop-shadow(0_0_1px_rgba(0,0,0,0.5))] hover:scale-[1.33] hover:rotate-[5deg]"
+			title="Settings & More"
+			onClick={onClick}
+		>
+			<img
+				className="h-[34px] w-auto min-[1000px]:h-[40px]"
+				src="images/ocarina-small.webp"
+				draggable={false}
+			/>
 		</button>
 	);
 }
@@ -43,43 +55,49 @@ function Modal({
 	const userSettingsRef = useRef(userSettings);
 	userSettingsRef.current = userSettings;
 
+	const socialIconClass = clsx(
+		"inline-block mx-[0.2em]",
+		isMobile ? "text-[1.8em]" : "text-[1.2em]"
+	);
+
 	return (
 		<div
 			className={clsx(
-				style["meta-modal"],
-				{[style["meta-modal--show"]]: isOpen},
-				{[style["meta-modal--mobile"]]: isMobile}
+				"fixed inset-0 z-[101] h-full w-full bg-black/70 backdrop-blur-[2vmax] transition-[opacity,backdrop-filter] duration-300",
+				isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
 			)}
 		>
 			<button
-				className="close-button"
+				className="absolute top-0 right-0 z-[1] block h-[70px] w-[80px] [filter:drop-shadow(0_0_4px_rgba(0,0,0,0.5))] before:absolute before:top-1/2 before:left-1/2 before:block before:h-[2px] before:w-[30px] before:bg-white before:content-[''] before:[transform:translate(-50%,-50%)_rotate(45deg)] after:absolute after:top-1/2 after:left-1/2 after:block after:h-[2px] after:w-[30px] after:bg-white after:content-[''] after:[transform:translate(-50%,-50%)_rotate(135deg)]"
 				onClick={() => {
 					setCurrentKeybindId(() => null);
 					onClose();
 				}}
 			></button>
 			<div
-				className="modal-inner"
+				className="flex h-full w-full items-center justify-center overflow-auto"
 				onClick={() => {
 					setCurrentKeybindId(() => null);
 					onClose();
 				}}
 			>
 				<div
-					className="content"
+					className="my-auto w-full max-w-[600px] p-[75px_15px]"
 					onClick={(e) => {
 						e.stopPropagation();
 					}}
 				>
-					<h2 className="headline">Settings</h2>
-					<div className="settings">
+					<h2 className="mb-[1em] text-center text-[40px] [&:not(:first-of-type)]:mt-[1.5em] after:mt-[0.25em] after:block after:h-px after:w-full after:bg-white/80 after:content-['']">
+						Settings
+					</h2>
+					<div className="select-none">
 						{userSettings.map((userSetting) => {
 							switch (userSetting.type) {
 								case "toggle":
 									return (
 										<button
-											className={clsx("setting toggle", {
-												"hide-on-mobile": userSetting.hideOnMobile,
+											className={clsx(settingClass, "cursor-pointer", {
+												hidden: isMobile && userSetting.hideOnMobile,
 											})}
 											key={userSetting.id}
 											onClick={() => {
@@ -90,21 +108,21 @@ function Modal({
 												saveUserSettings(newUserSettings);
 											}}
 										>
-											<div className="setting-label">{userSetting.name}</div>
+											<div className="mr-[1.5em]">{userSetting.name}</div>
 											<Toggle isChecked={userSetting.value} />
 										</button>
 									);
 								case "slider":
 									return (
 										<div
-											className={clsx("setting slider", {
-												"hide-on-mobile": userSetting.hideOnMobile,
+											className={clsx(settingClass, {
+												hidden: isMobile && userSetting.hideOnMobile,
 											})}
 											key={userSetting.id}
 										>
-											<div className="setting-label">{userSetting.name}</div>
+											<div className="mr-[1.5em]">{userSetting.name}</div>
 											<RangeInput
-												className={"range-input"}
+												className={"w-full"}
 												min={0}
 												max={1}
 												step={0.01}
@@ -121,17 +139,17 @@ function Modal({
 								case "keybind":
 									return (
 										<button
-											className={clsx("setting keybind", {
-												"hide-on-mobile": userSetting.hideOnMobile,
+											className={clsx(settingClass, "cursor-pointer", {
+												hidden: isMobile && userSetting.hideOnMobile,
 											})}
 											key={userSetting.id}
 											onClick={() => {
 												setCurrentKeybindId(userSetting.id);
 											}}
 										>
-											<div className="setting-label">
-												<div className="input-label">
-													<userSetting.image className="input-image" />
+											<div className="mr-[1.5em]">
+												<div className="flex items-center">
+													<userSetting.image className="mr-[10px] h-auto w-[40px]" />
 													{userSetting.name}
 												</div>
 											</div>
@@ -146,11 +164,14 @@ function Modal({
 							}
 						})}
 					</div>
-					<h2 className="headline">Info</h2>
-					<div className="info">
+					<h2 className="mb-[1em] text-center text-[40px] [&:not(:first-of-type)]:mt-[1.5em] after:mt-[0.25em] after:block after:h-px after:w-full after:bg-white/80 after:content-['']">
+						Info
+					</h2>
+					<div className="[&_p]:mb-[0.5em] [&_p]:leading-[1.3]">
 						<p>
 							Based on{" "}
 							<a
+								className={infoLinkClass}
 								href="https://en.wikipedia.org/wiki/The_Legend_of_Zelda:_Ocarina_of_Time"
 								target="_blank"
 							>
@@ -158,6 +179,7 @@ function Modal({
 							</a>{" "}
 							and{" "}
 							<a
+								className={infoLinkClass}
 								href="https://en.wikipedia.org/wiki/The_Legend_of_Zelda:_Majora%27s_Mask"
 								target="_blank"
 							>
@@ -166,42 +188,57 @@ function Modal({
 						</p>
 						<p>
 							Made with{" "}
-							<a href="https://react.dev/" target="_blank">
+							<a className={infoLinkClass} href="https://react.dev/" target="_blank">
 								React
 							</a>{" "}
 							+{" "}
-							<a href="https://www.typescriptlang.org/" target="_blank">
+							<a
+								className={infoLinkClass}
+								href="https://www.typescriptlang.org/"
+								target="_blank"
+							>
 								Typescript
 							</a>{" "}
 							+{" "}
-							<a href="https://vitejs.dev/" target="_blank">
+							<a className={infoLinkClass} href="https://vitejs.dev/" target="_blank">
 								Vite
 							</a>
 						</p>
 						<p>
 							Github repository:{" "}
-							<a href="https://github.com/vaexenc/ocarina" target="_blank">
+							<a
+								className={infoLinkClass}
+								href="https://github.com/vaexenc/ocarina"
+								target="_blank"
+							>
 								https://github.com/vaexenc/ocarina
 							</a>
 						</p>
 						<p>
 							Made by vaexenc{" "}
-							<a href="https://github.com/vaexenc" title="Github" target="_blank">
-								<IconGithub className="social-icon" />
+							<a
+								className={infoLinkClass}
+								href="https://github.com/vaexenc"
+								title="Github"
+								target="_blank"
+							>
+								<IconGithub className={socialIconClass} />
 							</a>
 							<a
+								className={infoLinkClass}
 								href="https://twitter.com/vaexenc"
 								title="X / Twitter"
 								target="_blank"
 							>
-								<IconX className="social-icon" />
+								<IconX className={socialIconClass} />
 							</a>
 							<a
+								className={infoLinkClass}
 								href="https://discord.com/users/vaexenc"
 								title="Discord"
 								target="_blank"
 							>
-								<IconDiscord className="social-icon" />
+								<IconDiscord className={socialIconClass} />
 							</a>
 						</p>
 					</div>

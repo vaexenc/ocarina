@@ -1,5 +1,4 @@
 import clsx from "clsx";
-import style from "./Keybind.module.scss";
 
 export default function Keybind({
 	keyboardKey,
@@ -16,9 +15,10 @@ export default function Keybind({
 
 	return (
 		<div
-			className={clsx(style.keybind, "keybind", {
-				[style["keybind--awaiting-input"]]: awaitingInput,
-			})}
+			className={clsx(
+				"flex min-w-[2.15em] items-center justify-center rounded-[0.35em] border-2 border-white bg-transparent px-[0.82em] py-[0.6em] tracking-[0.02em] text-white transition-[background-color,color] duration-300 group-hover:bg-white group-hover:text-black",
+				{"animate-glowing": awaitingInput}
+			)}
 		>
 			{label}
 		</div>

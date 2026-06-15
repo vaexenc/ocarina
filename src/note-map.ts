@@ -5,12 +5,13 @@ import CRight from "/src/images/buttons/c-right.svg?react";
 import A from "/src/images/buttons/a.svg?react";
 import {NoteName, SvgComponent} from "/src/types";
 
+// `class` is the Tailwind utility positioning the note vertically within its container
 const noteMap: Record<NoteName, {class: string; Image: SvgComponent}> = {
-	u: {class: "note-up", Image: CUp},
-	d: {class: "note-down", Image: CDown},
-	l: {class: "note-left", Image: CLeft},
-	r: {class: "note-right", Image: CRight},
-	a: {class: "note-a", Image: A},
+	u: {class: "top-[15%]", Image: CUp},
+	d: {class: "top-[85%]", Image: CDown},
+	l: {class: "top-[35%]", Image: CLeft},
+	r: {class: "top-[66%]", Image: CRight},
+	a: {class: "top-[105%]", Image: A},
 };
 
 export {noteMap};
