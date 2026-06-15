@@ -77,15 +77,14 @@ function App() {
 		setCurrentSongId(null);
 	}, []);
 
-	function onResize() {
-		setisMobile(checkIfMobileDevice);
-	}
-
 	useEffect(() => {
-		window.addEventListener("resize", onResize);
+		const pointerQuery = window.matchMedia("(pointer: coarse)");
+		const onPointerChange = (e: MediaQueryListEvent) => setisMobile(e.matches);
+
+		pointerQuery.addEventListener("change", onPointerChange);
 
 		return () => {
-			window.removeEventListener("resize", onResize);
+			pointerQuery.removeEventListener("change", onPointerChange);
 		};
 	}, []);
 
