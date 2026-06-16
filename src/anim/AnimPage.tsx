@@ -1,12 +1,18 @@
 import {useEffect, useRef, useState} from "react";
 import {
 	AmbientLight,
+	BackSide,
 	Box3,
+	BoxGeometry,
 	Color,
 	DirectionalLight,
+	DoubleSide,
 	Matrix3,
 	Matrix4,
+	Mesh,
+	MeshBasicMaterial,
 	PerspectiveCamera,
+	Plane,
 	Scene,
 	SkinnedMesh,
 	SRGBColorSpace,
@@ -15,10 +21,11 @@ import {
 	Vector3,
 	WebGLRenderer,
 	type Bone,
+	type Side,
 	type Skeleton,
 } from "three";
-import {ColladaLoader} from "three/examples/jsm/loaders/ColladaLoader.js";
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls.js";
+import {ColladaLoader} from "three/examples/jsm/loaders/ColladaLoader.js";
 import {calcBoneLocalMatrix, parseCSAB, type CSAB, type RestBone} from "./csab";
 
 const MODEL_URL = "/models/link-adult/Adult Link.dae";
@@ -26,6 +33,21 @@ const SKELETON_URL = "/models/link-adult/anim/skeleton.json";
 const CLIP_URL = "/models/link-adult/anim/nml_okarina_swing.csab";
 
 const FPS = 30;
+
+// Skybox built from public/models/skybox. The four side strips are 2:1 (twice as
+// wide as tall), so the surrounding box is twice as wide as it is tall — a cube
+// texture would squash them. We map the images onto a BoxGeometry's faces with
+// BackSide so we see them from inside.
+const SKY_DIR = "/models/skybox";
+// One entry per BoxGeometry face, in three's fixed order [+X, -X, +Y, -Y, +Z, -Z].
+// The four side strips wrap the vertical faces going around the box, top.png caps
+// +Y, and the never-seen ground (-Y) is left as a flat color (null). If the
+// panorama seams don't line up, rotate the four side names within this array.
+const SKY_FACES: (string | null)[] = ["side2", "side4", "top", null, "side1", "side3"];
+const SKY_GROUND_COLOR = 0x14161d;
+// How far below eye level the mirror split sits, as a fraction of the skybox's
+// (camera-following) scale. 0 = eye level / horizon centered; larger drops it.
+const SKY_SPLIT_DROP = 0.22;
 
 // Selectable face-expression textures (link_e00.png … link_e07.png). Only e00 is
 // baked into the model; the rest are swapped onto the face material at runtime.
@@ -289,6 +311,7 @@ export default function AnimPage() {
 		let disposed = false;
 		const renderer = new WebGLRenderer({antialias: true});
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		renderer.localClippingEnabled = true; // for the skybox split plane
 		const scene = new Scene();
 		scene.background = new Color(0x14161d);
 		const camera = new PerspectiveCamera(45, 1, 1, 100000);
@@ -302,6 +325,52 @@ export default function AnimPage() {
 		const fill = new DirectionalLight(0xbfd4ff, 0.8);
 		fill.position.set(-1.5, 0.5, -1);
 		scene.add(fill);
+
+		// --- skybox ----------------------------------------------------------------
+		// Unlit box (twice as wide as tall) viewed from the inside. It rides with the
+		// camera each frame and is scaled to sit just inside the far plane, so it reads
+		// as an infinitely distant background you can never reach.
+		//
+		// A horizontal plane splits it at its vertical center — which, because the box
+		// is centered on the camera, is always eye level. The real box fills the half
+		// above the plane; a vertically-flipped copy fills the half below it. Since a
+		// skybox depends only on view direction, the flipped copy is an exact mirror
+		// of the top half, so the lower half of the view reflects the upper half.
+		const skyLoader = new TextureLoader();
+		const skyTextures: Texture[] = [];
+		const skyTexByName = new Map<string, Texture>();
+		const skyTexture = (name: string) => {
+			let tex = skyTexByName.get(name);
+			if (!tex) {
+				tex = skyLoader.load(`${SKY_DIR}/${name}.png`);
+				tex.colorSpace = SRGBColorSpace;
+				skyTexByName.set(name, tex);
+				skyTextures.push(tex);
+			}
+			return tex;
+		};
+		// Clipping planes (world space; their constants track eye level each frame).
+		const clipTop = new Plane(new Vector3(0, 1, 0), 0); // keeps geometry above eye level
+		const clipBottom = new Plane(new Vector3(0, -1, 0), 0); // keeps geometry below it
+		const makeSkyMaterials = (side: Side, clip: Plane) =>
+			SKY_FACES.map((name) =>
+				name
+					? new MeshBasicMaterial({map: skyTexture(name), side, depthWrite: false, clippingPlanes: [clip]})
+					: new MeshBasicMaterial({color: SKY_GROUND_COLOR, side, depthWrite: false, clippingPlanes: [clip]})
+			);
+
+		const skyGeo = new BoxGeometry(1, 0.5, 1);
+		const skyMaterials = makeSkyMaterials(BackSide, clipTop);
+		// Mirror copy is flipped on Y (scale.y < 0), which reverses winding, so it
+		// uses DoubleSide to stay visible from inside.
+		const skyMirrorMaterials = makeSkyMaterials(DoubleSide, clipBottom);
+		const skybox = new Mesh(skyGeo, skyMaterials);
+		const skyMirror = new Mesh(skyGeo, skyMirrorMaterials);
+		for (const m of [skybox, skyMirror]) {
+			m.frustumCulled = false;
+			m.renderOrder = -1;
+			scene.add(m);
+		}
 
 		container.appendChild(renderer.domElement);
 
@@ -503,6 +572,19 @@ export default function AnimPage() {
 				pose(clip, frame);
 			}
 			controls.update();
+			// Keep the skybox centered on the camera and sized to sit just inside the
+			// far plane (box is 1×0.5×1, so uniform scale preserves its 2:1 walls). The
+			// mirror copy is the same but flipped on Y. The split plane tracks eye level.
+			const s = camera.far * 0.8;
+			const splitY = camera.position.y - SKY_SPLIT_DROP * s; // world height of the split
+			skybox.scale.setScalar(s);
+			skybox.position.copy(camera.position);
+			// Flip on Y and reflect about splitY (so the seam stays continuous): a point
+			// at world y maps to 2*splitY - y, i.e. center moves to 2*splitY - cam.y.
+			skyMirror.scale.set(s, -s, s);
+			skyMirror.position.set(camera.position.x, 2 * splitY - camera.position.y, camera.position.z);
+			clipTop.constant = -splitY; // original keeps geometry above splitY
+			clipBottom.constant = splitY; // mirror keeps geometry below it
 			renderer.render(scene, camera);
 		};
 		raf = requestAnimationFrame(tick);
@@ -514,6 +596,10 @@ export default function AnimPage() {
 			controls.dispose();
 			renderer.dispose();
 			renderer.domElement.remove();
+			skyGeo.dispose();
+			skyMaterials.forEach((m) => m.dispose());
+			skyMirrorMaterials.forEach((m) => m.dispose());
+			skyTextures.forEach((t) => t.dispose());
 				swappedFaceTexRef.current?.dispose();
 				swappedFaceTexRef.current = null;
 				faceMaterialsRef.current = [];
