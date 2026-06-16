@@ -98,6 +98,23 @@ const CAMERA_PATH: CamKey[] = [
 	{t: 8.5, azimuth: BACK_AZIMUTH + ORBIT_DIR * 180, elevation: 6, radius: 2.5, look: [0, 0.17, 0]},
 ];
 
+// Editable axes for the debug camera panel. Target offsets and zoom are authored
+// in model radii (matching CamKey.look / CamKey.radius), and az/el use the same
+// convention as the path (azimuth 0 = +Z, elevation above the horizon), so values
+// read off the sliders can be pasted straight into a CAMERA_PATH keyframe.
+const CAM_FIELDS = [
+	{key: "tx", label: "target x", min: -3, max: 3, step: 0.01, digits: 2},
+	{key: "ty", label: "target y", min: -3, max: 3, step: 0.01, digits: 2},
+	{key: "tz", label: "target z", min: -3, max: 3, step: 0.01, digits: 2},
+	{key: "az", label: "yaw°", min: 0, max: 360, step: 0.5, digits: 1},
+	{key: "el", label: "pitch°", min: -89, max: 89, step: 0.5, digits: 1},
+	{key: "roll", label: "roll°", min: -180, max: 180, step: 0.5, digits: 1},
+	{key: "dist", label: "dist (r)", min: 0.3, max: 40, step: 0.05, digits: 2},
+	{key: "zoom", label: "zoom×", min: 0.2, max: 8, step: 0.05, digits: 2},
+	{key: "fov", label: "fov°", min: 15, max: 90, step: 1, digits: 0},
+] as const;
+type CamField = (typeof CAM_FIELDS)[number]["key"];
+
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 // Smoothstep: eases in and out of every segment so accel/decel feels natural.
 const easeInOut = (t: number) => t * t * (3 - 2 * t);
@@ -324,6 +341,18 @@ export default function AnimPage() {
 	// when OrbitControls is in charge. Read by the render loop without restarting it.
 	const camStartRef = useRef<number | null>(null);
 
+	// Editable camera panel. The slider inputs and their value labels are driven
+	// directly through these refs (no per-frame React re-render): the render loop
+	// writes the live camera values into them, and dragging a slider calls back
+	// into the effect via applyCamRef to move the camera. editingCamRef suppresses
+	// the loop's write-back while a slider is being dragged so it doesn't fight the
+	// drag.
+	const camInputsRef = useRef<Partial<Record<CamField, HTMLInputElement | null>>>({});
+	const camNumbersRef = useRef<Partial<Record<CamField, HTMLInputElement | null>>>({});
+	const editingCamRef = useRef(false);
+	const editCamRef = useRef<(key: CamField, raw: string) => void>(() => {});
+	const resetCamRef = useRef<() => void>(() => {});
+
 	// Live values the animation loop reads without restarting the effect.
 	const playingRef = useRef(true);
 	playingRef.current = playing;
@@ -510,6 +539,101 @@ export default function AnimPage() {
 		const camPos = new Vector3();
 		const camTarget = new Vector3();
 		const camAim = new Vector3();
+		const dbgDir = new Vector3(); // scratch for the camera panel readout
+		// Default framing captured once the model loads, restored by the panel's reset.
+		const defaultCamPos = new Vector3();
+		const defaultCamTarget = new Vector3();
+		let defaultFov = camera.fov;
+		let defaultZoom = camera.zoom;
+
+		// --- editable camera panel <-> camera plumbing -------------------------
+		// Current camera state expressed in the panel's editable axes.
+		const readCamParams = (): Record<CamField, number> => {
+			dbgDir.copy(camera.position).sub(controls.target);
+			const dist = dbgDir.length();
+			return {
+				tx: (controls.target.x - modelCenter.x) / modelRadius,
+				ty: (controls.target.y - modelCenter.y) / modelRadius,
+				tz: (controls.target.z - modelCenter.z) / modelRadius,
+				az: (Math.atan2(dbgDir.x, dbgDir.z) / DEG + 360) % 360,
+				el: dist > 0 ? Math.asin(dbgDir.y / dist) / DEG : 0,
+				// Roll is applied as a post-rotation each frame (OrbitControls/lookAt
+				// always level the camera), so it's panel-owned: echo the input back.
+				roll: num("roll"),
+				dist: dist / modelRadius,
+				zoom: camera.zoom,
+				fov: camera.fov,
+			};
+		};
+		const num = (key: CamField) => parseFloat(camInputsRef.current[key]?.value ?? "0");
+		// Mirror the (full-precision) slider values into the editable number boxes,
+		// rounded for legibility.
+		const writeNumbers = () => {
+			for (const f of CAM_FIELDS) {
+				const inp = camNumbersRef.current[f.key];
+				if (inp) inp.value = num(f.key).toFixed(f.digits);
+			}
+		};
+		// Push the live camera into the sliders + number boxes (used while the user
+		// is not editing the panel, so orbit/cinematic motion stays reflected).
+		const syncPanelFromCam = () => {
+			const v = readCamParams();
+			for (const f of CAM_FIELDS) {
+				const inp = camInputsRef.current[f.key];
+				if (inp) inp.value = String(v[f.key]);
+			}
+			writeNumbers();
+		};
+		// Drive the camera from the current slider values. No-op during the cinematic
+		// shot, which owns the camera.
+		const applyCamFromPanel = () => {
+			if (camStartRef.current !== null) return;
+			controls.target.set(
+				modelCenter.x + num("tx") * modelRadius,
+				modelCenter.y + num("ty") * modelRadius,
+				modelCenter.z + num("tz") * modelRadius
+			);
+			const az = num("az") * DEG;
+			const el = num("el") * DEG;
+			const ce = Math.cos(el);
+			dbgDir.set(ce * Math.sin(az), Math.sin(el), ce * Math.cos(az));
+			camera.position.copy(controls.target).addScaledVector(dbgDir, num("dist") * modelRadius);
+			const fov = num("fov");
+			const zoom = num("zoom");
+			if (camera.fov !== fov || camera.zoom !== zoom) {
+				camera.fov = fov;
+				camera.zoom = zoom;
+				camera.updateProjectionMatrix();
+			}
+			controls.update();
+			writeNumbers();
+		};
+		// Edit a single field from either its slider or its number box: clamp, write
+		// the slider (the source of truth applyCamFromPanel reads), then apply.
+		editCamRef.current = (key, raw) => {
+			const f = CAM_FIELDS.find((x) => x.key === key);
+			const v = parseFloat(raw);
+			if (!f || Number.isNaN(v)) return;
+			const inp = camInputsRef.current[key];
+			if (inp) inp.value = String(Math.min(f.max, Math.max(f.min, v)));
+			applyCamFromPanel();
+		};
+		// Restore the camera to the framing captured when the model loaded.
+		resetCamRef.current = () => {
+			if (camStartRef.current !== null) return; // cinematic owns the camera
+			controls.target.copy(defaultCamTarget);
+			camera.position.copy(defaultCamPos);
+			if (camera.fov !== defaultFov || camera.zoom !== defaultZoom) {
+				camera.fov = defaultFov;
+				camera.zoom = defaultZoom;
+				camera.updateProjectionMatrix();
+			}
+			// Roll isn't part of the captured framing; clear it explicitly.
+			const rollInp = camInputsRef.current.roll;
+			if (rollInp) rollInp.value = "0";
+			controls.update();
+			syncPanelFromCam();
+		};
 
 		// Per-cmb-id scratch matrices.
 		const localM: Matrix4[] = [];
@@ -665,10 +789,11 @@ export default function AnimPage() {
 			camera.far = radius * 50;
 			camera.updateProjectionMatrix();
 			controls.update();
-
-			// Roll the cinematic shot automatically once the model is framed.
-			camStartRef.current = performance.now();
-			setCamPlaying(true);
+			// Remember this framing so the panel's reset button can return to it.
+			defaultCamTarget.copy(controls.target);
+			defaultCamPos.copy(camera.position);
+			defaultFov = camera.fov;
+			defaultZoom = camera.zoom;
 
 			setStatus("");
 		};
@@ -717,6 +842,11 @@ export default function AnimPage() {
 			} else {
 				controls.update();
 			}
+			// Roll the camera around its view axis. OrbitControls/lookAt above always
+			// level the camera, so this re-applies the panel's roll from scratch each
+			// frame (no accumulation). Camera looks down local -Z, so that's the axis.
+			const roll = num("roll") * DEG;
+			if (roll) camera.rotateZ(roll);
 			// Fit the near/far planes to the current camera distance so the model never
 			// clips against the far plane when zoomed out (which made it pop in/out).
 			// Far stays well beyond the model so the camera-centered skybox always wraps
@@ -742,6 +872,10 @@ export default function AnimPage() {
 			skyMirror.position.set(camera.position.x, 2 * splitY - camera.position.y, camera.position.z);
 			clipTop.constant = -splitY; // original keeps geometry above splitY
 			clipBottom.constant = splitY; // mirror keeps geometry below it
+
+			// Keep the editable camera panel in sync with the live camera, except
+			// while a slider is being dragged (the drag would fight a write-back).
+			if (!editingCamRef.current) syncPanelFromCam();
 			renderer.render(scene, camera);
 		};
 		raf = requestAnimationFrame(tick);
@@ -769,6 +903,47 @@ export default function AnimPage() {
 			<div ref={containerRef} className="absolute inset-0" />
 
 			{status && <p className="absolute left-4 top-4 text-sm text-amber-300">{status}</p>}
+
+			<div className="absolute bottom-4 left-4 w-80 rounded-md bg-black/50 px-3 py-3 font-mono text-xs text-emerald-300 backdrop-blur">
+					{CAM_FIELDS.map((f) => (
+						<div key={f.key} className="flex items-center gap-2 py-1.5">
+							<span className="w-16 shrink-0 text-white/60">{f.label}</span>
+							<input
+								type="range"
+								min={f.min}
+								max={f.max}
+								step={f.step}
+								ref={(el) => {
+									camInputsRef.current[f.key] = el;
+								}}
+								onPointerDown={() => (editingCamRef.current = true)}
+								onPointerUp={() => (editingCamRef.current = false)}
+								onPointerLeave={() => (editingCamRef.current = false)}
+								onInput={(e) => editCamRef.current(f.key, e.currentTarget.value)}
+								className="h-1 flex-1 cursor-pointer accent-emerald-400"
+							/>
+							<input
+								type="number"
+								min={f.min}
+								max={f.max}
+								step={f.step}
+								ref={(el) => {
+									camNumbersRef.current[f.key] = el;
+								}}
+								onFocus={() => (editingCamRef.current = true)}
+								onBlur={() => (editingCamRef.current = false)}
+								onChange={(e) => editCamRef.current(f.key, e.currentTarget.value)}
+								className="w-14 shrink-0 rounded bg-white/10 px-1 py-0.5 text-right tabular-nums text-emerald-300 [appearance:textfield] focus:bg-white/20 focus:outline-none"
+							/>
+						</div>
+					))}
+					<button
+						onClick={() => resetCamRef.current()}
+						className="mt-2 w-full rounded bg-white/10 py-1 text-xs text-white/70 hover:bg-white/20 hover:text-white"
+					>
+						reset
+					</button>
+				</div>
 
 			{layers.length > 0 && (
 				<div className="absolute right-4 top-4 flex max-h-[85vh] w-80 flex-col rounded-lg bg-black/50 text-sm backdrop-blur">
