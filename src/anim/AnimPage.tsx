@@ -53,9 +53,109 @@ const SKY_SPLIT_DROP = 0.22;
 // baked into the model; the rest are swapped onto the face material at runtime.
 const FACE_DIR = "/models/link-adult";
 const FACE_IDS = Array.from({length: 8}, (_, i) => String(i).padStart(2, "0"));
+// Expression shown on load. e00 is baked into the model, so anything else is
+// swapped onto the face material once it's available (see start()).
+const DEFAULT_FACE = "02";
 // The model node carrying the face (link_e00) material; its material map is what
 // the expression dropdown swaps.
 const FACE_NODE = "nodes_141_";
+
+// --- cinematic camera path -------------------------------------------------
+// A scripted fly-in: opens way zoomed out directly behind the character and
+// dramatically zooms in to a close behind-the-back shot, then orbits around so
+// the side comes into view and finally the front.
+//
+// Keyframes are authored in spherical coordinates around a look-at target, so
+// both the zoom-in and the orbit are just azimuth/elevation/distance
+// interpolation (a straight position lerp would cut through the model on the
+// orbit). Orientation has two tunables: if the shot opens facing the character
+// instead of their back, add 180 to BACK_AZIMUTH; if it circles to the right
+// instead of the left, flip ORBIT_DIR.
+const DEG = Math.PI / 180;
+const BACK_AZIMUTH = 180; // azimuth in degrees (0 = +Z) at which the camera sits behind the character
+const ORBIT_DIR = -1; // +1 / -1: which way to circle from behind toward the front
+
+interface CamKey {
+	t: number; // seconds from the start of the shot
+	azimuth: number; // degrees around Y (0 = +Z), authored continuously so the orbit direction is explicit
+	elevation: number; // degrees above the horizon; camera looks down when > 0
+	radius: number; // distance from the look-at target, in model radii
+	look: [number, number, number]; // look-at offset from the model center, in model radii
+	// Where the subject sits in frame, roughly in screen halves from center
+	// (+x right, +y up). [0,0] = centered. Shifts only the aim, not the position,
+	// so the subject can ride toward a corner. Defaults to [0,0].
+	screen?: [number, number];
+}
+
+const CAMERA_PATH: CamKey[] = [
+	// Establishing: high above and behind, angled down and to the left so the
+	// character first appears at the top-right corner. The camera then descends.
+	{t: 0, azimuth: BACK_AZIMUTH, elevation: 30, radius: 40, look: [0, 0.1, 0], screen: [0.6, 0.4]},
+	// Dramatic descent + zoom in to a close behind-the-back shot, recentering him.
+	{t: 3.5, azimuth: BACK_AZIMUTH, elevation: 9, radius: 2.3, look: [0, 0.2, 0], screen: [0, 0]},
+	// One continuous orbit from behind, past the side, around to the front (no
+	// intermediate keyframe, so it doesn't decelerate to a stop at the side).
+	{t: 8.5, azimuth: BACK_AZIMUTH + ORBIT_DIR * 180, elevation: 6, radius: 2.5, look: [0, 0.17, 0]},
+];
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+// Smoothstep: eases in and out of every segment so accel/decel feels natural.
+const easeInOut = (t: number) => t * t * (3 - 2 * t);
+
+// Sample the path at time tSec. Writes the camera position into outPos, the
+// framing point we orbit/center on into outTarget, and the actual look-at point
+// (outTarget shifted by the keyframe's screen offset) into outAim. Returns true
+// once the shot has reached its final frame.
+const _camDir = new Vector3();
+const _view = new Vector3();
+const _right = new Vector3();
+const _up = new Vector3();
+const _WORLD_UP = new Vector3(0, 1, 0);
+function sampleCameraPath(
+	tSec: number,
+	center: Vector3,
+	radius: number,
+	outPos: Vector3,
+	outTarget: Vector3,
+	outAim: Vector3
+): boolean {
+	let i = 0;
+	while (i < CAMERA_PATH.length - 1 && tSec > CAMERA_PATH[i + 1].t) i++;
+	const a = CAMERA_PATH[i];
+	const b = CAMERA_PATH[Math.min(i + 1, CAMERA_PATH.length - 1)];
+	const span = b.t - a.t;
+	const u = easeInOut(span > 0 ? Math.min(Math.max((tSec - a.t) / span, 0), 1) : 1);
+
+	const az = lerp(a.azimuth, b.azimuth, u) * DEG;
+	const el = lerp(a.elevation, b.elevation, u) * DEG;
+	const dist = lerp(a.radius, b.radius, u) * radius;
+	outTarget.set(
+		center.x + lerp(a.look[0], b.look[0], u) * radius,
+		center.y + lerp(a.look[1], b.look[1], u) * radius,
+		center.z + lerp(a.look[2], b.look[2], u) * radius
+	);
+	const ce = Math.cos(el);
+	_camDir.set(ce * Math.sin(az), Math.sin(el), ce * Math.cos(az));
+	outPos.copy(outTarget).addScaledVector(_camDir, dist);
+
+	// Screen offset: aim away from the subject by (sx,sy) of the view plane so it
+	// renders toward the opposite corner. Scaled by distance so it stays put in
+	// frame as the camera dollies in.
+	const sx = lerp(a.screen?.[0] ?? 0, b.screen?.[0] ?? 0, u);
+	const sy = lerp(a.screen?.[1] ?? 0, b.screen?.[1] ?? 0, u);
+	if (sx === 0 && sy === 0) {
+		outAim.copy(outTarget);
+	} else {
+		_view.copy(outTarget).sub(outPos).normalize();
+		_right.crossVectors(_view, _WORLD_UP).normalize();
+		_up.crossVectors(_right, _view).normalize();
+		outAim
+			.copy(outTarget)
+			.addScaledVector(_right, -sx * dist)
+			.addScaledVector(_up, -sy * dist);
+	}
+	return tSec >= CAMERA_PATH[CAMERA_PATH.length - 1].t;
+}
 
 // Label a mesh by its texture filename (the only meaningful identifier the rip
 // carries), e.g. "link_e00", "p_tex08". Falls back to the node name.
@@ -217,7 +317,12 @@ export default function AnimPage() {
 	const [speed, setSpeed] = useState(0.5);
 	const [layers, setLayers] = useState<Layer[]>([]);
 	const [exported, setExported] = useState(false);
-	const [face, setFace] = useState(FACE_IDS[0]);
+	const [face, setFace] = useState(DEFAULT_FACE);
+	const [camPlaying, setCamPlaying] = useState(false);
+
+	// Start time (performance.now timebase) of the running cinematic shot, or null
+	// when OrbitControls is in charge. Read by the render loop without restarting it.
+	const camStartRef = useRef<number | null>(null);
 
 	// Live values the animation loop reads without restarting the effect.
 	const playingRef = useRef(true);
@@ -397,6 +502,14 @@ export default function AnimPage() {
 		const skeletons: Skeleton[] = [];
 		const skinnedMeshes: SkinnedMesh[] = [];
 		let clip: CSAB | null = null;
+		// Model framing bounds, set once it loads: used to keep the camera's
+		// near/far planes wrapped snugly around the model and to anchor the
+		// cinematic camera path. Reused scratch vectors for the scripted shot.
+		let modelRadius = 1;
+		const modelCenter = new Vector3();
+		const camPos = new Vector3();
+		const camTarget = new Vector3();
+		const camAim = new Vector3();
 
 		// Per-cmb-id scratch matrices.
 		const localM: Matrix4[] = [];
@@ -520,6 +633,7 @@ export default function AnimPage() {
 				faceMats.push({mat, base: mat.map});
 			}
 			faceMaterialsRef.current = faceMats;
+			if (DEFAULT_FACE !== FACE_IDS[0]) applyFace(DEFAULT_FACE);
 
 			const stored = loadJsonRecord<boolean>(PARTS_KEY);
 			const storedCategory = loadJsonRecord<PartCategory>(CATEGORY_KEY);
@@ -541,12 +655,20 @@ export default function AnimPage() {
 			const size = box.getSize(new Vector3());
 			const center = box.getCenter(new Vector3());
 			const radius = Math.max(size.x, size.y, size.z) * 0.5 || 1;
+			modelRadius = radius;
+			modelCenter.copy(center);
 			controls.target.copy(center);
 			camera.position.set(center.x + radius * 0.4, center.y + radius * 0.2, center.z + radius * 3);
+			// near/far are kept fitted to the camera distance every frame (see tick);
+			// just seed them here so the first render is sane.
 			camera.near = radius * 0.05;
 			camera.far = radius * 50;
 			camera.updateProjectionMatrix();
 			controls.update();
+
+			// Roll the cinematic shot automatically once the model is framed.
+			camStartRef.current = performance.now();
+			setCamPlaying(true);
 
 			setStatus("");
 		};
@@ -571,7 +693,42 @@ export default function AnimPage() {
 				}
 				pose(clip, frame);
 			}
-			controls.update();
+			if (camStartRef.current !== null) {
+				// Scripted shot owns the camera; OrbitControls is suspended until it ends.
+				if (controls.enabled) controls.enabled = false;
+				const done = sampleCameraPath(
+					(now - camStartRef.current) / 1000,
+					modelCenter,
+					modelRadius,
+					camPos,
+					camTarget,
+					camAim
+				);
+				camera.position.copy(camPos);
+				controls.target.copy(camTarget);
+				camera.lookAt(camAim);
+				if (done) {
+					// Resync OrbitControls to the final framing, then hand control back.
+					camStartRef.current = null;
+					controls.enabled = true;
+					controls.update();
+					setCamPlaying(false);
+				}
+			} else {
+				controls.update();
+			}
+			// Fit the near/far planes to the current camera distance so the model never
+			// clips against the far plane when zoomed out (which made it pop in/out).
+			// Far stays well beyond the model so the camera-centered skybox always wraps
+			// it; near hugs the model without going non-positive when zoomed in close.
+			const dist = camera.position.distanceTo(controls.target);
+			const far = (dist + modelRadius) * 4;
+			const near = Math.max(dist - modelRadius * 2, modelRadius * 0.01);
+			if (camera.far !== far || camera.near !== near) {
+				camera.far = far;
+				camera.near = near;
+				camera.updateProjectionMatrix();
+			}
 			// Keep the skybox centered on the camera and sized to sit just inside the
 			// far plane (box is 1×0.5×1, so uniform scale preserves its 2:1 walls). The
 			// mirror copy is the same but flipped on Y. The split plane tracks eye level.
@@ -691,6 +848,15 @@ export default function AnimPage() {
 					className="rounded-full bg-white/10 px-5 py-1.5 text-sm hover:bg-white/20"
 				>
 					{playing ? "Pause" : "Play"}
+				</button>
+				<button
+					onClick={() => {
+						camStartRef.current = performance.now();
+						setCamPlaying(true);
+					}}
+					className="rounded-full bg-white/10 px-4 py-1.5 text-sm hover:bg-white/20"
+				>
+					{camPlaying ? "Replay" : "Cinematic"}
 				</button>
 				<label className="flex items-center gap-2 pl-1 pr-2 text-xs">
 					<input
