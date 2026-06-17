@@ -97,6 +97,20 @@ const MODELS: ModelDef[] = [
 		// the strum animation.
 		attachment: {url: "/models/link-zora/link_zora_gakki/link_zora_gakki.dae", boneCmbId: 17},
 	},
+	{
+		key: "deku",
+		label: "Deku Link",
+		modelUrl: "/models/link-deku/Deku Link.dae",
+		skeletonUrl: "/models/link-deku/anim/skeleton.json",
+		clips: [
+			{key: "play", label: "Play", url: "/models/link-deku/anim/pn_gakkiplay.csab"},
+			{key: "start", label: "Start", url: "/models/link-deku/anim/pn_gakkistart.csab"},
+			{key: "wait", label: "Wait", url: "/models/link-deku/anim/pn_gakkiwait.csab"},
+		],
+		// The Deku pipes are a separate model held up to the face. Like Zora's guitar
+		// it parents to a hand leaf bone (skeleton bone 17) and rides the play clip.
+		attachment: {url: "/models/link-deku/link_deknuts_gakki/link_deknuts_gakki.dae", boneCmbId: 17},
+	},
 ];
 
 const FPS = 30;

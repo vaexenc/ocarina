@@ -11,6 +11,7 @@ so each script targets one (or both):
 | --- | --- | --- | --- | --- |
 | **Ocarina of Time 3D** (OoT3D) | Adult Link | pre-extracted in [`../adult-ocarina/`](../adult-ocarina) and [`../ocarina-anim/`](../ocarina-anim) (`link_v2.cmb` + `nml_okarina_*.csab`) | `0x03` ("Ocarina") | `0x28` |
 | **Majora's Mask 3D** (MM3D) | Zora Link (+ guitar) | extracted from the ROM into [`../zora-guitar/`](../zora-guitar) (`link_zora.cmb` + `pz_gakki*.csab`) | `0x05` ("Majora") | `0x2c` |
+| **Majora's Mask 3D** (MM3D) | Deku Link (+ pipes) | extracted from the ROM into [`../deku-link/`](../deku-link) (`link_deknuts.cmb` + `pn_gakki*.csab`) | `0x05` ("Majora") | `0x2c` |
 
 The runtime CSAB parser ([`src/anim/csab.ts`](../../src/anim/csab.ts)) detects the
 subversion and handles both. `emit2.mjs` auto-detects the cmb bone stride.
@@ -61,3 +62,13 @@ node tools/emit2.mjs zora-guitar/link_zora.cmb "../public/models/link-zora/Zora 
 
 (The `.cmb`/`.csab` inputs in `../zora-guitar/` were carved from the GARs with
 `gar.mjs`'s `parseGar`.)
+
+Deku Link is built the same way. Its `link_deknuts.cmb` comes from
+`zelda2_link_nuts_new.gar.lzs` and its `pn_gakki*.csab` clips from the shared
+`zelda2_link_new.gar.lzs` (the `nuts/anim/` entries); both are carved into
+[`../deku-link/`](../deku-link), then:
+
+```sh
+node tools/emit2.mjs deku-link/link_deknuts.cmb "../public/models/link-deku/Deku Link.dae" \
+  ../public/models/link-deku/anim/skeleton.json
+```
