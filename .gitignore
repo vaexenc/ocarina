@@ -27,5 +27,6 @@ dist-ssr
 
 ####################################
 3d-stuff/romfs
+3d-stuff/3dstool
 public/models
 ####################################

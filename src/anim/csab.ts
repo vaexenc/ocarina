@@ -111,21 +111,63 @@ function parseTrack(view: DataView, offs: number, int16: boolean): AnimationTrac
 	}
 }
 
-function parseAnod(view: DataView, offs: number): AnimationNode {
+// Majora's Mask 3D (CSAB subversion 0x05) track format. Differs from Ocarina:
+// the header is u8 type, u8 isBaked, u16 keyframeCount, then either a
+// scale/bias-quantised value list (LINEAR / baked) or full float hermite frames.
+// Values (including rotations, in radians) are decoded straight from scale/bias,
+// so there is no int16-angle path here.
+function parseTrackMajora(view: DataView, offs: number): AnimationTrack {
+	let type = view.getUint8(offs + 0x00);
+	const isBaked = view.getUint8(offs + 0x01) !== 0;
+	const numKeyframes = view.getUint16(offs + 0x02, true);
+
+	if (isBaked || type === AnimationTrackType.LINEAR) {
+		type = AnimationTrackType.LINEAR;
+		const scale = view.getFloat32(offs + 0x04, true);
+		const bias = view.getFloat32(offs + 0x08, true);
+		const frames: KeyframeLinear[] = [];
+		let p = offs + 0x0c;
+		for (let i = 0; i < numKeyframes; i++) {
+			frames.push({time: i, value: view.getUint16(p, true) * scale - bias});
+			p += 0x02;
+		}
+		return {type, frames};
+	} else if (type === AnimationTrackType.HERMITE) {
+		const timeEnd = view.getInt16(offs + 0x06, true) + 1;
+		const frames: KeyframeHermite[] = [];
+		let p = offs + 0x10;
+		for (let i = 0; i < numKeyframes; i++) {
+			frames.push({
+				time: view.getUint32(p + 0x00, true),
+				value: view.getFloat32(p + 0x04, true),
+				tangentIn: view.getFloat32(p + 0x08, true),
+				tangentOut: view.getFloat32(p + 0x0c, true),
+			});
+			p += 0x10;
+		}
+		return {type, timeEnd, frames};
+	} else {
+		throw new Error(`csab: unsupported majora track type ${type}`);
+	}
+}
+
+function parseAnod(
+	view: DataView,
+	offs: number,
+	parseOne: (rel: number, int16: boolean) => AnimationTrack | null
+): AnimationNode {
 	// magic 'anod' at +0x00
 	const boneIndex = view.getUint16(offs + 0x04, true);
 	const isRotationInt16 = view.getUint16(offs + 0x06, true) !== 0;
-	const t = (rel: number, int16: boolean): AnimationTrack | null =>
-		rel !== 0 ? parseTrack(view, offs + rel, int16) : null;
-	const translationX = t(view.getUint16(offs + 0x08, true), false);
-	const translationY = t(view.getUint16(offs + 0x0a, true), false);
-	const translationZ = t(view.getUint16(offs + 0x0c, true), false);
-	const rotationX = t(view.getUint16(offs + 0x0e, true), isRotationInt16);
-	const rotationY = t(view.getUint16(offs + 0x10, true), isRotationInt16);
-	const rotationZ = t(view.getUint16(offs + 0x12, true), isRotationInt16);
-	const scaleX = t(view.getUint16(offs + 0x14, true), false);
-	const scaleY = t(view.getUint16(offs + 0x16, true), false);
-	const scaleZ = t(view.getUint16(offs + 0x18, true), false);
+	const translationX = parseOne(view.getUint16(offs + 0x08, true), false);
+	const translationY = parseOne(view.getUint16(offs + 0x0a, true), false);
+	const translationZ = parseOne(view.getUint16(offs + 0x0c, true), false);
+	const rotationX = parseOne(view.getUint16(offs + 0x0e, true), isRotationInt16);
+	const rotationY = parseOne(view.getUint16(offs + 0x10, true), isRotationInt16);
+	const rotationZ = parseOne(view.getUint16(offs + 0x12, true), isRotationInt16);
+	const scaleX = parseOne(view.getUint16(offs + 0x14, true), false);
+	const scaleY = parseOne(view.getUint16(offs + 0x16, true), false);
+	const scaleZ = parseOne(view.getUint16(offs + 0x18, true), false);
 	return {
 		boneIndex,
 		translationX,
@@ -154,23 +196,35 @@ export function parseCSAB(buffer: ArrayBuffer): CSAB {
 	);
 	if (magic !== "csab") throw new Error(`csab: bad magic '${magic}'`);
 
-	const duration = view.getUint32(0x28, true) + 1;
-	const anodCount = view.getUint32(0x30, true);
-	const boneCount = view.getUint32(0x34, true);
+	// subversion 0x03 = Ocarina of Time 3D, 0x05 = Majora's Mask 3D. The two have
+	// different header layouts, anod-table base offsets, and per-track encodings.
+	const subversion = view.getUint32(0x08, true);
+	const majora = subversion === 0x05;
+	const durationOffs = majora ? 0x34 : 0x28;
+	const anodCountOffs = majora ? 0x3c : 0x30;
+	const boneCountOffs = majora ? 0x40 : 0x34;
+	const boneTableOffs = majora ? 0x44 : 0x38;
+	const anodBase = majora ? 0x24 : 0x18;
+
+	const duration = view.getUint32(durationOffs, true) + 1;
+	const anodCount = view.getUint32(anodCountOffs, true);
+	const boneCount = view.getUint32(boneCountOffs, true);
 
 	const boneToAnimationTable = new Int16Array(boneCount);
-	let p = 0x38;
+	let p = boneTableOffs;
 	for (let i = 0; i < boneCount; i++) {
 		boneToAnimationTable[i] = view.getInt16(p, true);
 		p += 0x02;
 	}
 
-	// anod offset table is 4-byte aligned; offsets are relative to 0x18.
+	// anod offset table is 4-byte aligned; offsets are relative to anodBase.
 	let anodTableIdx = (p + 3) & ~3;
 	const animationNodes: AnimationNode[] = [];
 	for (let i = 0; i < anodCount; i++) {
-		const offs = view.getUint32(anodTableIdx, true);
-		animationNodes.push(parseAnod(view, 0x18 + offs));
+		const offs = anodBase + view.getUint32(anodTableIdx, true);
+		const parseOne = (rel: number, int16: boolean): AnimationTrack | null =>
+			rel !== 0 ? (majora ? parseTrackMajora(view, offs + rel) : parseTrack(view, offs + rel, int16)) : null;
+		animationNodes.push(parseAnod(view, offs, parseOne));
 		anodTableIdx += 0x04;
 	}
 

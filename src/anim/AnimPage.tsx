@@ -7,6 +7,7 @@ import {
 	Color,
 	DirectionalLight,
 	DoubleSide,
+	Group,
 	Matrix3,
 	Matrix4,
 	Mesh,
@@ -28,9 +29,75 @@ import {OrbitControls} from "three/examples/jsm/controls/OrbitControls.js";
 import {ColladaLoader} from "three/examples/jsm/loaders/ColladaLoader.js";
 import {calcBoneLocalMatrix, parseCSAB, type CSAB, type RestBone} from "./csab";
 
-const MODEL_URL = "/models/link-adult/Adult Link.dae";
-const SKELETON_URL = "/models/link-adult/anim/skeleton.json";
-const CLIP_URL = "/models/link-adult/anim/nml_okarina_swing.csab";
+// Selectable face-expression ids (link_e00 … link_e07 / link_zora_e00 …).
+const FACE_IDS = Array.from({length: 8}, (_, i) => String(i).padStart(2, "0"));
+
+// Optional per-model face-swapping config. `dir` holds the link_e<NN>.png files,
+// `node` is the model node whose material map is hot-swapped, `prefix` is the
+// texture basename before the id (e.g. "link_e" or "link_zora_e").
+interface FaceConfig {
+	dir: string;
+	prefix: string;
+	node: string;
+	default: string;
+}
+
+// A separate model (e.g. Zora's guitar) that the game draws parented to one of
+// the main skeleton's bones. We load it and attach it to that bone so it rides
+// the animation. `boneCmbId` is the cmb bone id of the holding limb; `offset` is
+// an optional column-major-16 local transform applied between the bone and the
+// attachment (for fine-positioning the grip).
+interface Attachment {
+	url: string;
+	boneCmbId: number;
+	offset?: number[];
+}
+
+interface ClipDef {
+	key: string;
+	label: string;
+	url: string;
+}
+
+interface ModelDef {
+	key: string;
+	label: string;
+	modelUrl: string;
+	skeletonUrl: string;
+	clips: ClipDef[];
+	face?: FaceConfig;
+	attachment?: Attachment;
+}
+
+// Switchable models. Each pairs a Collada mesh with the cmb-derived skeleton.json
+// and one or more CSAB clips (OoT3D okarina swing for Adult, MM3D Zora guitar
+// animations for Zora).
+const MODELS: ModelDef[] = [
+	{
+		key: "adult",
+		label: "Adult Link",
+		modelUrl: "/models/link-adult/Adult Link.dae",
+		skeletonUrl: "/models/link-adult/anim/skeleton.json",
+		clips: [{key: "okarina", label: "Okarina", url: "/models/link-adult/anim/nml_okarina_swing.csab"}],
+		face: {dir: "/models/link-adult", prefix: "link_e", node: "nodes_141_", default: "02"},
+	},
+	{
+		key: "zora",
+		label: "Zora Link",
+		modelUrl: "/models/link-zora/Zora Link.dae",
+		skeletonUrl: "/models/link-zora/anim/skeleton.json",
+		clips: [
+			{key: "play", label: "Play", url: "/models/link-zora/anim/pz_gakkiplay.csab"},
+			{key: "start", label: "Start", url: "/models/link-zora/anim/pz_gakkistart.csab"},
+			{key: "wait", label: "Wait", url: "/models/link-zora/anim/pz_gakkiwait.csab"},
+			{key: "demo", label: "Demo", url: "/models/link-zora/anim/pz_gakki_demo.csab"},
+		],
+		// The guitar is a separate model the game holds in Zora's right hand
+		// (skeleton bone 17, the right-arm leaf). It parents to that bone and rides
+		// the strum animation.
+		attachment: {url: "/models/link-zora/link_zora_gakki/link_zora_gakki.dae", boneCmbId: 17},
+	},
+];
 
 const FPS = 30;
 
@@ -48,17 +115,6 @@ const SKY_GROUND_COLOR = 0x14161d;
 // How far below eye level the mirror split sits, as a fraction of the skybox's
 // (camera-following) scale. 0 = eye level / horizon centered; larger drops it.
 const SKY_SPLIT_DROP = 0.22;
-
-// Selectable face-expression textures (link_e00.png … link_e07.png). Only e00 is
-// baked into the model; the rest are swapped onto the face material at runtime.
-const FACE_DIR = "/models/link-adult";
-const FACE_IDS = Array.from({length: 8}, (_, i) => String(i).padStart(2, "0"));
-// Expression shown on load. e00 is baked into the model, so anything else is
-// swapped onto the face material once it's available (see start()).
-const DEFAULT_FACE = "02";
-// The model node carrying the face (link_e00) material; its material map is what
-// the expression dropdown swaps.
-const FACE_NODE = "nodes_141_";
 
 // --- cinematic camera path -------------------------------------------------
 // A scripted fly-in: opens way zoomed out directly behind the character and
@@ -266,8 +322,10 @@ interface Layer {
 	category: PartCategory;
 }
 
-const PARTS_KEY = "ocarina.animPartsVisibility";
-const CATEGORY_KEY = "ocarina.animPartsCategory";
+// Parts visibility/category persistence is namespaced per model so switching
+// models keeps each one's toggles separate.
+const partsKey = (modelKey: string) => `ocarina.animPartsVisibility.${modelKey}`;
+const categoryKey = (modelKey: string) => `ocarina.animPartsCategory.${modelKey}`;
 
 function loadJsonRecord<T>(storageKey: string): Record<string, T> {
 	const raw = localStorage.getItem(storageKey);
@@ -279,15 +337,15 @@ function loadJsonRecord<T>(storageKey: string): Record<string, T> {
 	}
 }
 
-function savePartsState(layers: Layer[]) {
+function savePartsState(layers: Layer[], modelKey: string) {
 	const visibility: Record<string, boolean> = {};
 	const category: Record<string, PartCategory> = {};
 	for (const l of layers) {
 		visibility[l.key] = l.visible;
 		if (l.category !== "active") category[l.key] = l.category;
 	}
-	localStorage.setItem(PARTS_KEY, JSON.stringify(visibility));
-	localStorage.setItem(CATEGORY_KEY, JSON.stringify(category));
+	localStorage.setItem(partsKey(modelKey), JSON.stringify(visibility));
+	localStorage.setItem(categoryKey(modelKey), JSON.stringify(category));
 }
 
 const PARTS_FILE_TYPE = "ocarina-anim-parts";
@@ -325,6 +383,12 @@ interface SkeletonData {
 	bones: RestBone[];
 	G: number[];
 	cmbIdToDaeNum: Record<string, number>;
+	// Optional per-cmb-bone retarget matrices (column-major 16). Present when the
+	// dae's bind orientation differs from G*cmbBind (e.g. Zora): K post-multiplies
+	// the posed bone world matrix and Dinv replaces the cmb-derived bind inverse.
+	// Absent for models whose dae bind already matches (Adult), where K would be I.
+	K?: Record<string, number[]>;
+	Dinv?: Record<string, number[]>;
 }
 
 export default function AnimPage() {
@@ -334,8 +398,19 @@ export default function AnimPage() {
 	const [speed, setSpeed] = useState(0.5);
 	const [layers, setLayers] = useState<Layer[]>([]);
 	const [exported, setExported] = useState(false);
-	const [face, setFace] = useState(DEFAULT_FACE);
+	const [modelKey, setModelKey] = useState(MODELS[0].key);
+	const model = MODELS.find((m) => m.key === modelKey) ?? MODELS[0];
+	const [clipKey, setClipKey] = useState(model.clips[0].key);
+	const [face, setFace] = useState(model.face?.default ?? FACE_IDS[0]);
 	const [camPlaying, setCamPlaying] = useState(false);
+
+	// Swaps the active CSAB clip without rebuilding the scene; set inside the main
+	// effect, called by the clip-selection effect below.
+	const loadClipRef = useRef<(url: string) => void>(() => {});
+
+	// Current model's face config, refreshed when the scene (re)loads, so applyFace
+	// targets the right textures/material regardless of which model is showing.
+	const faceCfgRef = useRef<FaceConfig | undefined>(model.face);
 
 	// Start time (performance.now timebase) of the running cinematic shot, or null
 	// when OrbitControls is in charge. Read by the render loop without restarting it.
@@ -371,8 +446,9 @@ export default function AnimPage() {
 
 	const applyFace = (id: string) => {
 		const entries = faceMaterialsRef.current;
-		if (!entries.length) return;
-		new TextureLoader().load(`${FACE_DIR}/link_e${id}.png`, (tex) => {
+		const cfg = faceCfgRef.current;
+		if (!entries.length || !cfg) return;
+		new TextureLoader().load(`${cfg.dir}/${cfg.prefix}${id}.png`, (tex) => {
 			const base = entries[0].base;
 			tex.colorSpace = base?.colorSpace ?? SRGBColorSpace;
 			tex.flipY = base?.flipY ?? false;
@@ -407,8 +483,8 @@ export default function AnimPage() {
 	// Persist visibility + deleted state whenever it changes (skips the initial
 	// empty state).
 	useEffect(() => {
-		if (layers.length > 0) savePartsState(layers);
-	}, [layers]);
+		if (layers.length > 0) savePartsState(layers, modelKey);
+	}, [layers, modelKey]);
 
 	const exportToggles = () => {
 		const json = partsToJson(layers);
@@ -441,6 +517,16 @@ export default function AnimPage() {
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container) return;
+
+		// Resolve the selected model inside the effect so the closure isn't stale;
+		// the effect re-runs (tearing down + rebuilding the scene) when modelKey
+		// changes. faceCfgRef lets the out-of-effect applyFace find this model's config.
+		const model = MODELS.find((m) => m.key === modelKey) ?? MODELS[0];
+		faceCfgRef.current = model.face;
+		// Reset transient UI for the incoming model (parts rebuild once it loads).
+		setStatus("Loading model…");
+		setLayers([]);
+		setFace(model.face?.default ?? FACE_IDS[0]);
 
 		let disposed = false;
 		const renderer = new WebGLRenderer({antialias: true});
@@ -640,6 +726,13 @@ export default function AnimPage() {
 		const worldM: Matrix4[] = [];
 		const gWorldBind: Matrix4[] = []; // G * restWorld
 		const invBind: Matrix4[] = []; // inverse(G * restWorld)
+		// Optional per-bone retarget matrices from skeleton.json (Zora). When present,
+		// Km post-multiplies the posed bone world and Dm replaces invBind, so the
+		// cmb-driven animation deforms a dae whose bind orientation differs from the
+		// cmb's. Empty for models where the dae bind already matches (Adult).
+		const Km: Matrix4[] = [];
+		const Dm: Matrix4[] = []; // inverse(daeBindWorld)
+		let useRetarget = false;
 		const tmp = new Matrix4();
 
 		const cmbIdOf = (bone: Bone): number | undefined => {
@@ -655,11 +748,18 @@ export default function AnimPage() {
 			daeNumToCmb = new Map();
 			for (const [cmbId, daeNum] of Object.entries(sk.cmbIdToDaeNum))
 				daeNumToCmb.set(daeNum, parseInt(cmbId, 10));
+			const Kj = sk.K;
+			const Dinvj = sk.Dinv;
+			useRetarget = !!(Kj && Dinvj);
 			for (const b of restBones) {
 				localM[b.id] = new Matrix4();
 				worldM[b.id] = new Matrix4();
 				gWorldBind[b.id] = new Matrix4();
 				invBind[b.id] = new Matrix4();
+				if (Kj && Dinvj) {
+					Km[b.id] = new Matrix4().fromArray(Kj[b.id]);
+					Dm[b.id] = new Matrix4().fromArray(Dinvj[b.id]);
+				}
 			}
 			// Rest (bind) world matrices in CMB space, then G * that and its inverse.
 			for (const b of restBones) {
@@ -686,6 +786,9 @@ export default function AnimPage() {
 					// bone.matrixWorld = R * G * animatedWorld (Y-up world); pairs with
 					// the plain-G bind inverses to give skin = R·(original deformation).
 					bone.matrixWorld.multiplyMatrices(Gp, worldM[cmbId]);
+					// Retarget (Zora): post-multiply by K so the cmb-space deformation is
+					// re-expressed onto the dae's differently-oriented bind pose.
+					if (useRetarget) bone.matrixWorld.multiply(Km[cmbId]);
 				}
 			}
 			for (const sk of skeletons) sk.update();
@@ -697,25 +800,36 @@ export default function AnimPage() {
 				for (let j = 0; j < sk.bones.length; j++) {
 					const cmbId = cmbIdOf(sk.bones[j]);
 					if (cmbId === undefined) continue;
-					sk.boneInverses[j].copy(invBind[cmbId]);
+					// Dm = inverse(dae bind world) when retargeting; otherwise the
+					// cmb-derived inverse(G*cmbBind), which equals it for Adult.
+					sk.boneInverses[j].copy(useRetarget ? Dm[cmbId] : invBind[cmbId]);
 				}
 			}
 		};
 
+		// Load (or hot-swap) the active CSAB clip. Driven by the clip-selection
+		// effect, so changing the animation doesn't rebuild the whole scene. The
+		// render loop keeps its current frame, wrapped to the new clip's duration.
+		loadClipRef.current = (url: string) => {
+			void fetch(url)
+				.then((r) => r.arrayBuffer())
+				.then((buf) => {
+					if (!disposed) clip = parseCSAB(buf);
+				});
+		};
+
 		// --- load everything ---------------------------------------------------
 		const start = async () => {
-			const skJson: SkeletonData = await fetch(SKELETON_URL).then((r) => r.json());
+			const skJson: SkeletonData = await fetch(model.skeletonUrl).then((r) => r.json());
 			computeRest(skJson);
 
-			clip = parseCSAB(await fetch(CLIP_URL).then((r) => r.arrayBuffer()));
-
 			const collada = await new Promise<{scene: Scene}>((resolve, reject) => {
-				new ColladaLoader().load(MODEL_URL, (c) => resolve(c as unknown as {scene: Scene}), undefined, reject);
+				new ColladaLoader().load(model.modelUrl, (c) => resolve(c as unknown as {scene: Scene}), undefined, reject);
 			});
 			if (disposed) return;
 
-			const model = collada.scene;
-			model.traverse((obj) => {
+			const modelScene = collada.scene;
+			modelScene.traverse((obj) => {
 				if ((obj as SkinnedMesh).isSkinnedMesh) {
 					const mesh = obj as SkinnedMesh;
 					mesh.frustumCulled = false;
@@ -728,9 +842,39 @@ export default function AnimPage() {
 					}
 				}
 			});
-			scene.add(model);
+			scene.add(modelScene);
 			applyBoneInverses();
 			pose(null, 0); // bind pose
+
+			// Held attachment (Zora's guitar): load the separate model and parent it to
+			// the holding limb. three.js then rides it on that bone's posed matrixWorld
+			// each frame — no extra per-frame bookkeeping needed. Its own skeleton stays
+			// at bind pose (the strum clip only drives the body), so it renders rigidly.
+			if (model.attachment) {
+				const att = model.attachment;
+				const attColl = await new Promise<{scene: Scene}>((resolve, reject) => {
+					new ColladaLoader().load(att.url, (c) => resolve(c as unknown as {scene: Scene}), undefined, reject);
+				});
+				if (disposed) return;
+				let handBone: Bone | undefined;
+				for (const mesh of skinnedMeshes) {
+					for (const bone of mesh.skeleton.bones) {
+						if (cmbIdOf(bone) === att.boneCmbId) handBone = bone;
+					}
+				}
+				attColl.scene.traverse((obj) => {
+					if ((obj as SkinnedMesh).isSkinnedMesh) (obj as SkinnedMesh).frustumCulled = false;
+				});
+				if (handBone) {
+					const holder = new Group();
+					if (att.offset) {
+						holder.matrix.fromArray(att.offset);
+						holder.matrixAutoUpdate = false;
+					}
+					holder.add(attColl.scene);
+					handBone.add(holder);
+				}
+			}
 
 			// Smooth shading across the seams between separate head/body pieces by
 			// averaging normals at coincident vertices (needs world matrices posed).
@@ -747,20 +891,23 @@ export default function AnimPage() {
 				if (arr) arr.push(mesh);
 				else groups.set(label, [mesh]);
 			}
-			// Grab the face mesh's material (node FACE_NODE, textured with link_e00)
-			// so the expression dropdown can swap its map. Matching by node name is
-			// reliable; the texture's image.src isn't populated yet at this point.
+			// Grab the face mesh's material (model.face.node, textured with e00) so the
+			// expression dropdown can swap its map. Only models with a face config
+			// (Adult) participate; matching by node name is reliable here since the
+			// texture's image.src isn't populated yet.
 			const faceMats: {mat: FaceMat; base: Texture | null}[] = [];
-			for (const mesh of skinnedMeshes) {
-				if (mesh.name !== FACE_NODE) continue;
-				const mat = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as unknown as FaceMat;
-				faceMats.push({mat, base: mat.map});
+			if (model.face) {
+				for (const mesh of skinnedMeshes) {
+					if (mesh.name !== model.face.node) continue;
+					const mat = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as unknown as FaceMat;
+					faceMats.push({mat, base: mat.map});
+				}
 			}
 			faceMaterialsRef.current = faceMats;
-			if (DEFAULT_FACE !== FACE_IDS[0]) applyFace(DEFAULT_FACE);
+			if (model.face && model.face.default !== FACE_IDS[0]) applyFace(model.face.default);
 
-			const stored = loadJsonRecord<boolean>(PARTS_KEY);
-			const storedCategory = loadJsonRecord<PartCategory>(CATEGORY_KEY);
+			const stored = loadJsonRecord<boolean>(partsKey(modelKey));
+			const storedCategory = loadJsonRecord<PartCategory>(categoryKey(modelKey));
 			setLayers(
 				[...groups.entries()]
 					.map(([key, ms]) => {
@@ -896,7 +1043,16 @@ export default function AnimPage() {
 				faceMaterialsRef.current = [];
 			tmp.identity();
 		};
-	}, []);
+	}, [modelKey]);
+
+	// Swap the active clip when the selection (or model) changes, without tearing
+	// down the scene. Runs after the main effect has (re)assigned loadClipRef, so
+	// it also performs the initial load for the current model.
+	useEffect(() => {
+		const m = MODELS.find((x) => x.key === modelKey) ?? MODELS[0];
+		const c = m.clips.find((x) => x.key === clipKey) ?? m.clips[0];
+		loadClipRef.current(c.url);
+	}, [modelKey, clipKey]);
 
 	return (
 		<div className="relative h-screen w-screen overflow-hidden bg-[#14161d] text-white">
@@ -1018,6 +1174,40 @@ export default function AnimPage() {
 			)}
 
 			<div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-3 py-2 backdrop-blur">
+				<label className="flex items-center gap-2 pl-1 pr-1 text-xs">
+					<span className="text-white/70">Model</span>
+					<select
+						value={modelKey}
+						onChange={(e) => {
+							const next = MODELS.find((m) => m.key === e.target.value) ?? MODELS[0];
+							setModelKey(next.key);
+							setClipKey(next.clips[0].key);
+						}}
+						className="cursor-pointer rounded bg-white/10 px-1.5 py-1 text-xs hover:bg-white/20"
+					>
+						{MODELS.map((m) => (
+							<option key={m.key} value={m.key}>
+								{m.label}
+							</option>
+						))}
+					</select>
+				</label>
+				{model.clips.length > 1 && (
+					<label className="flex items-center gap-2 pr-1 text-xs">
+						<span className="text-white/70">Anim</span>
+						<select
+							value={clipKey}
+							onChange={(e) => setClipKey(e.target.value)}
+							className="cursor-pointer rounded bg-white/10 px-1.5 py-1 text-xs hover:bg-white/20"
+						>
+							{model.clips.map((c) => (
+								<option key={c.key} value={c.key}>
+									{c.label}
+								</option>
+							))}
+						</select>
+					</label>
+				)}
 				<button
 					onClick={() => setPlaying((p) => !p)}
 					className="rounded-full bg-white/10 px-5 py-1.5 text-sm hover:bg-white/20"
@@ -1045,23 +1235,25 @@ export default function AnimPage() {
 					/>
 					<span className="w-10 tabular-nums text-white/70">{speed.toFixed(2)}×</span>
 				</label>
-				<label className="flex items-center gap-2 pr-1 text-xs">
-					<span className="text-white/70">Face</span>
-					<select
-						value={face}
-						onChange={(e) => {
-							setFace(e.target.value);
-							applyFace(e.target.value);
-						}}
-						className="cursor-pointer rounded bg-white/10 px-1.5 py-1 text-xs hover:bg-white/20"
-					>
-						{FACE_IDS.map((id) => (
-							<option key={id} value={id}>
-								{id}
-							</option>
-						))}
-					</select>
-				</label>
+				{model.face && (
+					<label className="flex items-center gap-2 pr-1 text-xs">
+						<span className="text-white/70">Face</span>
+						<select
+							value={face}
+							onChange={(e) => {
+								setFace(e.target.value);
+								applyFace(e.target.value);
+							}}
+							className="cursor-pointer rounded bg-white/10 px-1.5 py-1 text-xs hover:bg-white/20"
+						>
+							{FACE_IDS.map((id) => (
+								<option key={id} value={id}>
+									{id}
+								</option>
+							))}
+						</select>
+					</label>
+				)}
 			</div>
 		</div>
 	);
