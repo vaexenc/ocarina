@@ -1,38 +1,62 @@
+import {NoteName} from "@/data/song-data";
+import A from "@/images/buttons/a-simple.svg?react";
+import CDown from "@/images/buttons/c-down-simple.svg?react";
+import CLeft from "@/images/buttons/c-left-simple.svg?react";
+import CRight from "@/images/buttons/c-right-simple.svg?react";
+import CUp from "@/images/buttons/c-up-simple.svg?react";
+import {SvgComponent} from "@/util/svg";
 import clsx from "clsx";
-import style from "./MobileControls.module.scss";
-import {NoteName} from "/src/types";
+import {useState} from "react";
 
 function Button({
 	className,
-	src,
+	Image,
 	onPress,
 	onRelease,
 }: {
 	className?: string;
-	src: string;
+	Image: SvgComponent;
 	onPress: () => void;
 	onRelease: () => void;
 }) {
+	const [isPressed, setIsPressed] = useState(false);
+
+	const press = () => {
+		setIsPressed(true);
+		// Optional haptic confirmation; unsupported on iOS Safari, hence the guard.
+		if ("vibrate" in navigator) {
+			navigator.vibrate(10);
+		}
+		onPress();
+	};
+
+	const release = () => {
+		setIsPressed(false);
+		onRelease();
+	};
+
 	return (
-		<img
-			className={clsx("button", className)}
-			src={src}
+		<Image
+			className={clsx(
+				"h-auto w-(--button-size) cursor-pointer rounded-[99999px] pointer-events-auto! transition-[transform,filter] duration-75",
+				isPressed && "scale-90 brightness-125",
+				className
+			)}
 			onTouchStart={(e) => {
 				e.preventDefault();
-				onPress();
+				press();
 			}}
 			onTouchEnd={() => {
-				onRelease();
+				release();
 			}}
 			onTouchCancel={() => {
-				onRelease();
+				release();
 			}}
 			onContextMenu={(e) => {
 				e.preventDefault();
 				e.stopPropagation();
 				return false;
 			}}
-			draggable="false"
 		/>
 	);
 }
@@ -44,42 +68,43 @@ export default function MobileControls({
 	inputPress: (note: NoteName) => void;
 	inputRelease: (note: NoteName) => void;
 }) {
+	// The A button bottom-aligns against the C-pad via `items-end` on the row — so it no longer
+	// needs a full-height wrapper (the old `h-full` only resolved when an ancestor had a definite
+	// height). It's tucked under the pad's lower-left with the negative right margin, and the pad's
+	// `mb` keeps it sitting slightly below C-down. The C-pad is a self-contained flex column whose
+	// diamond comes entirely from the buttons' own margins (`--inward-offset`).
 	return (
-		<div className={style["mobile-controls"]}>
-			<div className="a-container">
+		<div className="flex items-end mb-[calc(env(safe-area-inset-bottom)+30px)] isolate [--button-size:54px] [--inward-offset:calc(var(--button-size)*-0.1)]">
+			<Button
+				className="mr-[calc(var(--button-size)*-0.66)]"
+				Image={A}
+				onPress={() => inputPress("a")}
+				onRelease={() => inputRelease("a")}
+			/>
+			<div className="flex flex-col items-center justify-center mb-[calc(var(--button-size)*0.33)] pointer-events-none">
 				<Button
-					className="a"
-					src={"images/buttons/a-simple.svg"}
-					onPress={() => inputPress("a")}
-					onRelease={() => inputRelease("a")}
-				/>
-			</div>
-			<div className="c-container">
-				<Button
-					className="c-up"
-					src={"images/buttons/c-up-simple.svg"}
+					Image={CUp}
 					onPress={() => inputPress("u")}
 					onRelease={() => inputRelease("u")}
 				/>
 
-				<div className="c-middle-buttons">
+				<div className="flex items-center justify-center my-(--inward-offset)">
 					<Button
-						className="c-left"
-						src={"images/buttons/c-left-simple.svg"}
+						className="mr-(--inward-offset)"
+						Image={CLeft}
 						onPress={() => inputPress("l")}
 						onRelease={() => inputRelease("l")}
 					/>
 					<Button
-						className="c-right"
-						src={"images/buttons/c-right-simple.svg"}
+						className="ml-[calc(var(--button-size)+var(--inward-offset)*0.25)]"
+						Image={CRight}
 						onPress={() => inputPress("r")}
 						onRelease={() => inputRelease("r")}
 					/>
 				</div>
 
 				<Button
-					className="c-down"
-					src={"images/buttons/c-down-simple.svg"}
+					Image={CDown}
 					onPress={() => inputPress("d")}
 					onRelease={() => inputRelease("d")}
 				/>

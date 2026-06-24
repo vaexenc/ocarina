@@ -1,210 +1,234 @@
+import IconClose from "@/images/icons/close.svg?react";
+import {
+	KeybindId,
+	normalizeKey,
+	settingFields,
+	SettingId,
+	SettingValues,
+} from "@/settings/setting-fields";
+import {assertNever} from "@/util/assert";
+import {useFocusTrap} from "@/util/use-focus-trap";
 import clsx from "clsx";
 import {useCallback, useEffect, useRef, useState} from "react";
-import style from "./MetaModal.module.scss";
-import Keybind from "./keybind/Keybind";
-import RangeInput from "./range-input/RangeInput";
-import Toggle from "./toggle/Toggle";
-import {UserSetting, UserSettings} from "/src/types";
+import Collapse from "./Collapse";
+import Keybind from "./Keybind";
+import ModalInfo from "./ModalInfo";
+import RangeInput from "./RangeInput";
+import {headingClass, settingClass} from "./styles";
+import Toggle from "./Toggle";
 
-function ModalTrigger({onClick}: {onClick: React.MouseEventHandler<HTMLButtonElement>}) {
+type ChangeSetting = <K extends SettingId>(id: K, value: SettingValues[K]) => void;
+
+function ModalTrigger({
+	onClick,
+	isSwitcherOpen,
+	isModalOpen,
+}: {
+	onClick: React.MouseEventHandler<HTMLButtonElement>;
+	isSwitcherOpen: boolean;
+	isModalOpen: boolean;
+}) {
 	return (
-		<button className={style["meta-modal-trigger"]} title="Settings & More" onClick={onClick}>
-			<img className="image" src="images/ocarina-small.webp" draggable={false} />
+		<button
+			// While the mobile switcher is open this button fades out and goes non-interactive, so a
+			// tap in its corner only dismisses the switcher (via the window pointerdown) instead of
+			// also opening settings. While the modal is open it sits behind the dialog, so it's made
+			// inert to keep it out of the tab order and a11y tree alongside the rest of the page.
+			inert={isModalOpen}
+			className={clsx(
+				"fixed top-0 right-0 z-[100] p-[15px_15px_10px_10px] transition-[transform,opacity] duration-300 [filter:drop-shadow(0_0_3px_rgba(0,0,0,0.3))_drop-shadow(0_0_1px_rgba(0,0,0,0.5))] hover:scale-[1.33] hover:rotate-[5deg]",
+				isSwitcherOpen && "pointer-events-none opacity-0"
+			)}
+			title="Settings & More"
+			aria-label="Settings & More"
+			onClick={onClick}
+		>
+			<img
+				className="h-[34px] w-auto lg:h-[40px]"
+				src="images/ocarina-small.webp"
+				alt=""
+				draggable={false}
+			/>
 		</button>
+	);
+}
+
+function SettingControl({
+	settings,
+	changeSetting,
+	currentKeybindId,
+	setCurrentKeybindId,
+	isTouch,
+	keybindsOpen,
+	setKeybindsOpen,
+}: {
+	settings: SettingValues;
+	changeSetting: ChangeSetting;
+	currentKeybindId: KeybindId | null;
+	setCurrentKeybindId: React.Dispatch<React.SetStateAction<KeybindId | null>>;
+	isTouch: boolean;
+	keybindsOpen: boolean;
+	setKeybindsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+	const renderField = (field: (typeof settingFields)[number]) => {
+		const hidden = isTouch && field.hideOnMobile;
+
+		switch (field.type) {
+			case "toggle":
+				return (
+					<button
+						className={clsx(settingClass, "cursor-pointer", {hidden})}
+						key={field.id}
+						role="switch"
+						aria-checked={settings[field.id]}
+						onClick={() => changeSetting(field.id, !settings[field.id])}
+					>
+						<div className="mr-[1.5em]">{field.name}</div>
+						<Toggle isChecked={settings[field.id]} />
+					</button>
+				);
+			case "slider":
+				return (
+					<div className={clsx(settingClass, {hidden})} key={field.id}>
+						<div className="mr-[1.5em]">{field.name}</div>
+						<RangeInput
+							className="w-full"
+							ariaLabel={field.name}
+							min={0}
+							max={1}
+							step={0.01}
+							value={settings[field.id]}
+							onChange={(e) => changeSetting(field.id, Number(e.target.value))}
+						/>
+					</div>
+				);
+			case "keybind": {
+				const isAwaiting = currentKeybindId === field.id;
+				const keyName = settings[field.id] === " " ? "Space" : settings[field.id];
+				return (
+					<button
+						className={clsx(settingClass, "cursor-pointer", {hidden})}
+						key={field.id}
+						aria-label={
+							isAwaiting ? `${field.name}: press a key` : `${field.name}: ${keyName}`
+						}
+						onClick={() => setCurrentKeybindId(field.id)}
+					>
+						<div className="mr-[1.5em]">
+							<div className="flex items-center">
+								{field.image && (
+									<field.image className="mr-[10px] h-auto w-[40px]" />
+								)}
+								{field.name}
+							</div>
+						</div>
+						<Keybind keyboardKey={settings[field.id]} awaitingInput={isAwaiting} />
+					</button>
+				);
+			}
+			default:
+				return assertNever(field);
+		}
+	};
+
+	const keybindFields = settingFields.filter((field) => field.type === "keybind");
+	const otherFields = settingFields.filter((field) => field.type !== "keybind");
+
+	return (
+		<>
+			{otherFields.map(renderField)}
+			<Collapse
+				title="Keybinds"
+				isOpen={keybindsOpen}
+				onToggle={() => setKeybindsOpen((prev) => !prev)}
+				hidden={isTouch && keybindFields.every((field) => field.hideOnMobile)}
+			>
+				{keybindFields.map(renderField)}
+			</Collapse>
+		</>
 	);
 }
 
 function Modal({
 	isOpen,
 	onClose,
-	userSettings,
-	saveUserSettings,
-	changeUserSetting,
+	settings,
+	changeSetting,
 	currentKeybindId,
 	setCurrentKeybindId,
-	isMobile,
+	isTouch,
+	keybindsOpen,
+	setKeybindsOpen,
 }: {
 	isOpen: boolean;
 	onClose: () => void;
-	userSettings: UserSettings;
-	saveUserSettings: (userSettings: UserSettings) => void;
-	changeUserSetting: (
-		userSetting: UserSetting,
-		value: number | boolean | string
-	) => UserSetting[];
-	currentKeybindId: string | null;
-	setCurrentKeybindId: React.Dispatch<React.SetStateAction<string | null>>;
-	isMobile: boolean;
+	settings: SettingValues;
+	changeSetting: ChangeSetting;
+	currentKeybindId: KeybindId | null;
+	setCurrentKeybindId: React.Dispatch<React.SetStateAction<KeybindId | null>>;
+	isTouch: boolean;
+	keybindsOpen: boolean;
+	setKeybindsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-	const userSettingsRef = useRef(userSettings);
-	userSettingsRef.current = userSettings;
+	const close = () => {
+		setCurrentKeybindId(null);
+		onClose();
+	};
+
+	// Only a click that both started and ended on the backdrop itself should close. Without the
+	// mousedown check, a press starting inside the panel and released on the backdrop (e.g. a
+	// slider drag) would fire a click on their common ancestor and wrongly close the modal.
+	const backdropMouseDown = useRef(false);
+
+	// Trap focus while open; `inert` while closed keeps the (still-mounted) controls out of the tab
+	// order and the a11y tree.
+	const dialogRef = useRef<HTMLDivElement>(null);
+	useFocusTrap({isOpen, ref: dialogRef});
 
 	return (
 		<div
+			ref={dialogRef}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="meta-modal-title"
+			inert={!isOpen}
 			className={clsx(
-				style["meta-modal"],
-				{[style["meta-modal--show"]]: isOpen},
-				{[style["meta-modal--mobile"]]: isMobile}
+				"fixed inset-0 z-[101] h-full w-full bg-black/70 backdrop-blur-[2vmax] transition-[opacity,backdrop-filter] duration-300",
+				isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
 			)}
 		>
 			<button
-				className="close-button"
-				onClick={() => {
-					setCurrentKeybindId(() => null);
-					onClose();
-				}}
-			></button>
+				aria-label="Close"
+				className="absolute top-0 right-0 z-[1] flex h-[70px] w-[80px] items-center justify-center text-white [filter:drop-shadow(0_0_4px_rgba(0,0,0,0.5))]"
+				onClick={close}
+			>
+				<IconClose className="h-[30px] w-[30px]" />
+			</button>
 			<div
-				className="modal-inner"
-				onClick={() => {
-					setCurrentKeybindId(() => null);
-					onClose();
+				className="flex h-full w-full items-center justify-center overflow-auto"
+				onMouseDown={(e) => {
+					backdropMouseDown.current = e.target === e.currentTarget;
+				}}
+				onClick={(e) => {
+					if (e.target === e.currentTarget && backdropMouseDown.current) close();
 				}}
 			>
-				<div
-					className="content"
-					onClick={(e) => {
-						e.stopPropagation();
-					}}
-				>
-					<h2 className="headline">Settings</h2>
-					<div className="settings">
-						{userSettings.map((userSetting) => {
-							if (userSetting.type === "toggle") {
-								return (
-									<button
-										className={clsx("setting toggle", {
-											"hide-on-mobile": userSetting.hideOnMobile,
-										})}
-										key={userSetting.id}
-										onClick={() => {
-											const newUserSettings = changeUserSetting(
-												userSetting,
-												!userSetting.value
-											);
-											saveUserSettings(newUserSettings);
-										}}
-									>
-										<div className="setting-label">{userSetting.name}</div>
-										<Toggle isChecked={userSetting.value} />
-									</button>
-								);
-							}
-
-							if (userSetting.type === "slider") {
-								return (
-									<div
-										className={clsx("setting slider", {
-											"hide-on-mobile": userSetting.hideOnMobile,
-										})}
-										key={userSetting.id}
-									>
-										<div className="setting-label">{userSetting.name}</div>
-										<RangeInput
-											className={"range-input"}
-											min={0}
-											max={1}
-											step={0.01}
-											value={userSetting.value}
-											onChange={(e) => {
-												changeUserSetting(userSetting, e.target.value);
-											}}
-											onChangeDebounce={() => {
-												saveUserSettings(userSettingsRef.current);
-											}}
-										/>
-									</div>
-								);
-							}
-
-							if (userSetting.type === "keybind") {
-								return (
-									<button
-										className={clsx("setting keybind", {
-											"hide-on-mobile": userSetting.hideOnMobile,
-										})}
-										key={userSetting.id}
-										onClick={() => {
-											setCurrentKeybindId(userSetting.id);
-										}}
-									>
-										<div className="setting-label">
-											<div className="input-label">
-												<img
-													className="input-image"
-													src={userSetting.image}
-												/>
-												{userSetting.name}
-											</div>
-										</div>
-										<Keybind
-											keyboardKey={userSetting.value}
-											awaitingInput={currentKeybindId === userSetting.id}
-										/>
-									</button>
-								);
-							}
-						})}
+				<div className="my-auto w-full max-w-xl p-[75px_15px]">
+					<h2 id="meta-modal-title" className={headingClass}>
+						Settings
+					</h2>
+					<div className="select-none">
+						<SettingControl
+							settings={settings}
+							changeSetting={changeSetting}
+							currentKeybindId={currentKeybindId}
+							setCurrentKeybindId={setCurrentKeybindId}
+							isTouch={isTouch}
+							keybindsOpen={keybindsOpen}
+							setKeybindsOpen={setKeybindsOpen}
+						/>
 					</div>
-					<h2 className="headline">Info</h2>
-					<div className="info">
-						<p>
-							Based on{" "}
-							<a
-								href="https://en.wikipedia.org/wiki/The_Legend_of_Zelda:_Ocarina_of_Time"
-								target="_blank"
-							>
-								The Legend of Zelda: Ocarina of Time
-							</a>{" "}
-							and{" "}
-							<a
-								href="https://en.wikipedia.org/wiki/The_Legend_of_Zelda:_Majora%27s_Mask"
-								target="_blank"
-							>
-								Majora's Mask
-							</a>
-						</p>
-						<p>
-							Made with{" "}
-							<a href="https://react.dev/" target="_blank">
-								React
-							</a>{" "}
-							+{" "}
-							<a href="https://www.typescriptlang.org/" target="_blank">
-								Typescript
-							</a>{" "}
-							+{" "}
-							<a href="https://vitejs.dev/" target="_blank">
-								Vite
-							</a>
-						</p>
-						<p>
-							Github repository:{" "}
-							<a href="https://github.com/vaexenc/ocarina" target="_blank">
-								https://github.com/vaexenc/ocarina
-							</a>
-						</p>
-						<p>
-							Made by vaexenc{" "}
-							<a href="https://github.com/vaexenc" title="Github" target="_blank">
-								<span className="social-icon icon-github"></span>
-							</a>
-							<a
-								href="https://twitter.com/vaexenc"
-								title="X / Twitter"
-								target="_blank"
-							>
-								<span className="social-icon icon-x"></span>
-							</a>
-							<a
-								href="https://discord.com/users/vaexenc"
-								title="Discord"
-								target="_blank"
-							>
-								<span className="social-icon icon-discord"></span>
-							</a>
-						</p>
-					</div>
+					<ModalInfo isTouch={isTouch} />
 				</div>
 			</div>
 		</div>
@@ -213,45 +237,30 @@ function Modal({
 
 export default function MetaModal({
 	isOpen,
+	isSwitcherOpen,
 	onOpen,
 	onClose,
-	userSettings,
-	setUserSettings,
-	saveUserSettings,
-	isMobile,
+	settings,
+	setSettings,
+	isTouch,
 }: {
 	isOpen: boolean;
+	isSwitcherOpen: boolean;
 	onOpen: () => void;
 	onClose: () => void;
-	userSettings: UserSettings;
-	setUserSettings: React.Dispatch<React.SetStateAction<UserSettings>>;
-	saveUserSettings: (userSettings: UserSettings) => void;
-	isMobile: boolean;
+	settings: SettingValues;
+	setSettings: React.Dispatch<React.SetStateAction<SettingValues>>;
+	isTouch: boolean;
 }) {
-	const [currentKeybindId, setCurrentKeybindId] = useState<string | null>(null);
+	const [currentKeybindId, setCurrentKeybindId] = useState<KeybindId | null>(null);
+	// Owned here (not inside the always-rendered Modal's collapsed body) so it survives close/reopen.
+	const [keybindsOpen, setKeybindsOpen] = useState(false);
 
-	const changeUserSetting = useCallback(
-		(userSetting: UserSetting, value: number | boolean | string) => {
-			const newUserSettings = userSettings.map((prevUserSetting) => {
-				if (prevUserSetting.id !== userSetting.id) return prevUserSetting;
-
-				if (prevUserSetting.type === "slider")
-					return {...prevUserSetting, value: Number(value)};
-
-				if (prevUserSetting.type === "toggle")
-					return {...prevUserSetting, value: Boolean(value)};
-
-				if (prevUserSetting.type === "keybind")
-					return {...prevUserSetting, value: String(value)};
-
-				return prevUserSetting;
-			});
-
-			setUserSettings(newUserSettings);
-
-			return newUserSettings;
+	const changeSetting = useCallback<ChangeSetting>(
+		(id, value) => {
+			setSettings((prev) => ({...prev, [id]: value}));
 		},
-		[setUserSettings, userSettings]
+		[setSettings]
 	);
 
 	const handleKeyDown = useCallback(
@@ -259,24 +268,15 @@ export default function MetaModal({
 			if (!isOpen) return;
 
 			if (event.key === "Escape") {
-				if (currentKeybindId === null) {
-					onClose();
-				} else {
-					setCurrentKeybindId(() => null);
-				}
-			} else {
-				if (currentKeybindId !== null) {
-					event.preventDefault();
-					const newUserSettings = changeUserSetting(
-						userSettings.find((userSetting) => userSetting.id === currentKeybindId)!,
-						event.key
-					);
-					saveUserSettings(newUserSettings);
-					setCurrentKeybindId(() => null);
-				}
+				if (currentKeybindId === null) onClose();
+				else setCurrentKeybindId(null);
+			} else if (currentKeybindId !== null) {
+				event.preventDefault();
+				changeSetting(currentKeybindId, normalizeKey(event.key));
+				setCurrentKeybindId(null);
 			}
 		},
-		[onClose, currentKeybindId, isOpen, changeUserSetting, saveUserSettings, userSettings]
+		[onClose, currentKeybindId, isOpen, changeSetting]
 	);
 
 	useEffect(() => {
@@ -289,16 +289,17 @@ export default function MetaModal({
 
 	return (
 		<>
-			<ModalTrigger onClick={onOpen} />
+			<ModalTrigger onClick={onOpen} isSwitcherOpen={isSwitcherOpen} isModalOpen={isOpen} />
 			<Modal
 				isOpen={isOpen}
 				onClose={onClose}
-				userSettings={userSettings}
-				saveUserSettings={saveUserSettings}
-				changeUserSetting={changeUserSetting}
+				settings={settings}
+				changeSetting={changeSetting}
 				currentKeybindId={currentKeybindId}
 				setCurrentKeybindId={setCurrentKeybindId}
-				isMobile={isMobile}
+				isTouch={isTouch}
+				keybindsOpen={keybindsOpen}
+				setKeybindsOpen={setKeybindsOpen}
 			/>
 		</>
 	);

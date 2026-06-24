@@ -1,17 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
 		<meta
 			name="viewport"
-			content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover"
 		/>
 		<meta
 			name="description"
 			content="Play ocarina songs from the Zelda series in your browser."
 		/>
 		<meta name="author" content="vaexenc" />
-		<meta property="og:title" content="Ocarina Songs" />
+		<meta property="og:title" content="Ocarina Player" />
 		<meta
 			property="og:description"
 			content="Play ocarina songs from the Zelda series in your browser."
@@ -19,11 +19,11 @@
 		<meta property="og:image" content="https://i.imgur.com/UITxoYP.png" />
 		<meta property="twitter:card" content="summary" />
 		<meta property="twitter:image" content="https://i.imgur.com/UITxoYP.png" />
-		<meta property="twitter:title" content="Ocarina Songs" />
+		<meta property="twitter:title" content="Ocarina Player" />
 		<meta property="twitter:creator" content="@vaexenc" />
 		<meta name="darkreader" content="NO-DARKREADER-PLUGIN" />
 		<link rel="icon" href="favicon.ico" type="image/x-icon" />
-		<title>Ocarina Songs</title>
+		<title>Ocarina Player</title>
 
 		<style>
 			body {
@@ -33,10 +33,7 @@
 
 			@font-face {
 				font-family: "Press Start 2P";
-				src: url("fonts/press-start-2p/PressStart2P.woff2") format("woff2"),
-					url("fonts/press-start-2p/PressStart2P.woff") format("woff"),
-					url("fonts/press-start-2p/PressStart2P.ttf") format("truetype"),
-					url("fonts/press-start-2p/PressStart2P.svg#PressStart2P") format("svg");
+				src: url("/fonts/press-start-2p/PressStart2P.woff2") format("woff2");
 				font-display: block;
 			}
 
@@ -108,7 +105,7 @@
 						>vaexenc@github</a
 					>]
 				</p>
-				<p class="text-line text-line-4">[Date:$inject:date]</p>
+				<p class="text-line text-line-4">[Date:%VITE_BUILD_DATE%]</p>
 				<p class="text-line text-line-5">OCARINA 00000000 00000000</p>
 
 				<div class="border">
